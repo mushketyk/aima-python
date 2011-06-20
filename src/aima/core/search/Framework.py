@@ -196,5 +196,22 @@ class NodeExpander:
         return childNodes
 
 
+class Search(metaclass=ABCMeta):
+    def search(self, problem):
+        raise NotImplementedError()
+
+    def get_metrics(self):
+        raise NotImplementedError()
+
 class QueueSearch(NodeExpander):
-    pass
+    METRIC_QUEUE_SIZE = "queueSize"
+    METRIC_MAX_QUEUE_SIZE = "maxQueueSize"
+    METRIC_PATH_COST = "pathCost"
+
+
+    def __init__(self):
+        self._checkGoalBeforeAddingToFrontier = false
+        self._frontier = None
+
+    def search(self, problem, frontier):
+        pass
