@@ -1,6 +1,7 @@
 
 from aima.core.Agent import Action
 from aima.core.search.Framework import Search, NodeExpander, Node
+from aima.core.util.Datastructure import LIFOQueue
 
 __author__ = 'Ivan Mushketik'
 
@@ -32,7 +33,7 @@ class DepthFirstSearch(Search):
         self._search = queueSearch
 
     def search(self, problem):
-        pass
+        return self._search.search(problem, LIFOQueue())
 
     def get_metrics(self):
         return self._search.get_metrics()
