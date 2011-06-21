@@ -1,17 +1,6 @@
-'''
-Created on Jun 19, 2011
-
-@author: Ivan Mushketik
-'''
-
-# Artificial Intelligence A Modern Approach (3rd Edition): page 66
 from abc import ABCMeta
 
-class Action(metaclass=ABCMeta):
-
-    def is_noop(self):
-        raise NotImplementedError()
-    
+__author__ = 'Ivan Mushketik'
 
 #  Artificial Intelligence A Modern Approach (3rd Edition): page 67.
 class ActionFunction(metaclass=ABCMeta):

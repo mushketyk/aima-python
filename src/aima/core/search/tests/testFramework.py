@@ -1,13 +1,12 @@
-'''
-Created on Jun 19, 2011
-
-@author: proger
-'''
 import unittest
 import aima
 import aima.core
+from aima.core.Agent import Action
 import aima.core.search
 from aima.core.search.Framework import *
+from aima.core.search.tests.Problem import TestActionsFunction, TestResultFunction, TestGoalTest
+
+__author__ = 'Ivan Mushketik'
 
 class TestNode(unittest.TestCase):
 
@@ -41,35 +40,10 @@ class TestNode(unittest.TestCase):
         self.assertEquals(n2, path[1])
         self.assertEquals(n3, path[2])
 
-class TestAction(Action):
-    def is_noop(self):
-        return false
-
-class TestActionsFunction(ActionFunction):
-    def actions(self, state):
-        res = []
-        for i in range(0, 3):
-            res.append(TestAction())
-
-        return res
-
-class TestResultFuntion(ResultFunction):
-    def result(self, state, action):
-        return state + 1
-
-class TestGoalTest(GoalTest):
-    def is_goal_state(self, state):
-        return state == 3
-
-class TestProblem(Problem):
-    def __init__(self):
-        super().__init__(1, TestActionsFunction(), TestResultFuntion(), TestGoalTest())
-
-
 class TestNodeExpander(unittest.TestCase):
     def test_node_expanding(self):
         startNode = Node(1)
-        problem = TestProblem()
+        problem = Problem(1, TestActionsFunction(), TestResultFunction(), TestGoalTest(3))
         nodeExpander = NodeExpander()
         actionsList = nodeExpander.expand_node(startNode, problem)
 
