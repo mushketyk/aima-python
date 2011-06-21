@@ -73,6 +73,9 @@ class DepthLimitedSearch(NodeExpander, Search):
     def set_path_cost(self, path_cost):
         self._metrics[DepthLimitedSearch.PATH_COST] = path_cost
 
+    def get_metrics(self):
+        return self._metrics
+
     def search(self, problem):
         """
             Search solution for a problem with Depth First Search strategy with a specified depth limit.
@@ -125,4 +128,58 @@ class DepthLimitedSearch(NodeExpander, Search):
 
     def _failure(self):
         """ Return list that represents that search ended because of failure """
+        return []
+
+
+# Artificial Intelligence A Modern Approach (3rd Edition): Figure 3.18, page 89.
+#
+# function ITERATIVE-DEEPENING-SEARCH(problem) returns a solution, or failure
+#   for depth = 0 to infinity  do
+#     result <- DEPTH-LIMITED-SEARCH(problem, depth)
+#     if result != cutoff then return result
+class IterativeDeepeningSearch(Search):
+    """
+        Iterative Deepening search works file limited DFS, but instead it increases search limit. If search failed to
+        find solution at selected depth or if solution was found search terminates. If cutoff occured depth limit is
+        increased.
+    """
+    PATH_COST = "pathCost"
+    METRICS_NODES_EXPANDED = "nodesExpanded"
+
+    def __init__(self):
+        self._metrics = {}
+        self.clear_instrumentation()
+
+    def clear_instrumentation(self):
+        self._metrics[self.PATH_COST] = 0
+        self._metrics[self.METRICS_NODES_EXPANDED] = 0
+
+    def is_failure(self, result):
+        return len(result) == 0
+
+    # function ITERATIVE-DEEPENING-SEARCH(problem) returns a solution, or failure
+    def search(self, problem):
+        self.clear_instrumentation()
+
+        currLimit = 0
+        # for depth = 0 to infinity do
+        while True:
+            # result <- DEPTH-LIMITED-SEARCH(problem, depth)
+            dls = DepthLimitedSearch(currLimit)
+            result = dls.search(problem)
+
+            self._metrics[self.METRICS_NODES_EXPANDED] = self._metrics[self.METRICS_NODES_EXPANDED] + \
+                                                         dls.get_metrics()[DepthLimitedSearch.METRIC_NODES_EXPANDED]
+
+            # if result != cutoff then return result
+            if not dls.is_cutoff(result):
+                self._metrics[self.PATH_COST] = dls.get_path_cost()
+                return result
+
+            currLimit = currLimit + 1
+
+    def get_metrics(self):
+        return self._metrics
+
+    def _failure(self):
         return []

@@ -1,5 +1,5 @@
 from aima.core.search.Framework import Problem
-from aima.core.search.Uninformed import DepthLimitedSearch
+from aima.core.search.Uninformed import DepthLimitedSearch, IterativeDeepeningSearch
 from aima.core.search.tests.Problem import TestActionsFunction, TestResultFunction, TestGoalTest
 
 __author__ = 'Ivan Mushketik'
@@ -39,6 +39,27 @@ class TestDepthLimitSearch(unittest.TestCase):
         self.assertFalse(dls.is_cutoff(result))
         self.assertTrue(dls.is_failure(result))
 
+class TestIterativeDeepeningSearch(unittest.TestCase):
+    
+    def test_successful_search(self):
+        ids = IterativeDeepeningSearch()
+        problem = Problem(1, TestActionsFunction(), TestResultFunction(), TestGoalTest(4))
+
+        result = ids.search(problem)
+        self.assertEquals(4, len(result))
+        
+        self.assertEquals(1, result[0].get_state())
+        self.assertEquals(2, result[1].get_state())
+        self.assertEquals(3, result[2].get_state())
+        self.assertEquals(4, result[3].get_state())
+
+    def test_search_failure(self):
+        ids = IterativeDeepeningSearch()
+        # 5 - is a goal state but it's unreachable
+        problem = Problem(1, TestActionsFunction(2), TestResultFunction(), TestGoalTest(5))
+
+        result = ids.search(problem)
+        self.assertTrue(ids.is_failure(result))
 
 if __name__ == '__main__':
     unittest.main()
