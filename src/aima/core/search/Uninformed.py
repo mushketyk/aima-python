@@ -1,15 +1,28 @@
 
 from aima.core.Agent import Action
+from aima.core.AgentImpl import CutOffIndicatorAction
+from aima.core.search import Utils
 from aima.core.search.Framework import Search, NodeExpander, Node
 from aima.core.util.Datastructure import LIFOQueue
 
 __author__ = 'Ivan Mushketik'
 
-class CutOffIndicatorAction(Action):
-    def is_noop(self):
-        return True
+# Artificial Intelligence A Modern Approach (3rd Edition): page 85.
+class DepthFirstSearch(Search):
+    """
+        Depth first search examines first expanded node and checks if it's state is a goal state.
+        If not, it expands it and examines first expanded node.
 
-CUT_OFF = CutOffIndicatorAction()
+        This search can use any implementation of QueueSearch.
+    """
+    def __init__(self, queueSearch):
+        self._search = queueSearch
+
+    def search(self, problem):
+        return self._search.search(problem, LIFOQueue())
+
+    def get_metrics(self):
+        return self._search.get_metrics()
 
 # Artificial Intelligence A Modern Approach (3rd Edition): Figure 3.17, page 88
 
@@ -27,41 +40,13 @@ CUT_OFF = CutOffIndicatorAction()
  #           if result = cutoff then cutoff_occurred? <- true
  #           else if result != failure then return result
  #       if cutoff_occurred? then return cutoff else return failure
-class DepthFirstSearch(Search):
-
-    def __init__(self, queueSearch):
-        self._search = queueSearch
-
-    def search(self, problem):
-        return self._search.search(problem, LIFOQueue())
-
-    def get_metrics(self):
-        return self._search.get_metrics()
-    
 class DepthLimitedSearch(NodeExpander, Search):
     PATH_COST = "pathCost"
 
     def __init__(self, limit):
         super().__init__()
         self._limit = limit
-
-    def is_cutoff(self, result):
-        """
-            Check if search ended because of cutoff.
-
-            result - result of limited DFS
-            return True if cutoff occurred, or False otherwise
-        """
-        return (len(result) == 1) and (result[0] == CUT_OFF)
-
-    def is_failure(self, result):
-        """
-            Check if search ended because of failure.
-
-            result - result of limited DFS
-            return True if failure occurred, or False otherwise
-        """
-        return len(result) == 0
+        self._metrics[DepthLimitedSearch.PATH_COST] = 0
 
     def clear_instrumentation(self):
         super().clear_instrumentation()
@@ -89,11 +74,11 @@ class DepthLimitedSearch(NodeExpander, Search):
         return self._recursive_dls(Node(problem.get_initial_state()), problem, self._limit)
 
     def _recursive_dls(self, curNode, problem, limit):
-        goalTest = problem.get_goal_test()
+
         # if problem.GOAL-TEST(node.STATE) then return SOLUTION(node)
-        if goalTest.is_goal_state(curNode.get_state()):
+        if Utils.is_goal_state(problem, curNode):
             self.set_path_cost(curNode.get_path_cost())
-            return curNode.get_path_from_root()
+            return Utils.actions_from_nodes(curNode.get_path_from_root())
         elif limit == 0:
             # else if limit = 0 then return cutoff
             return self._cutoff()
@@ -122,13 +107,7 @@ class DepthLimitedSearch(NodeExpander, Search):
             else:
                 return self._failure()
 
-    def _cutoff(self):
-        """ Return array with a single action that represents that search ended because cut off occured """
-        return (CUT_OFF,)
 
-    def _failure(self):
-        """ Return list that represents that search ended because of failure """
-        return []
 
 
 # Artificial Intelligence A Modern Approach (3rd Edition): Figure 3.18, page 89.
@@ -140,7 +119,7 @@ class DepthLimitedSearch(NodeExpander, Search):
 class IterativeDeepeningSearch(Search):
     """
         Iterative Deepening search works file limited DFS, but instead it increases search limit. If search failed to
-        find solution at selected depth or if solution was found search terminates. If cutoff occured depth limit is
+        find solution at selected depth or if solution was found search terminates. If cutoff occurred depth limit is
         increased.
     """
     PATH_COST = "pathCost"
@@ -153,9 +132,6 @@ class IterativeDeepeningSearch(Search):
     def clear_instrumentation(self):
         self._metrics[self.PATH_COST] = 0
         self._metrics[self.METRICS_NODES_EXPANDED] = 0
-
-    def is_failure(self, result):
-        return len(result) == 0
 
     # function ITERATIVE-DEEPENING-SEARCH(problem) returns a solution, or failure
     def search(self, problem):
@@ -181,5 +157,4 @@ class IterativeDeepeningSearch(Search):
     def get_metrics(self):
         return self._metrics
 
-    def _failure(self):
-        return []
+

@@ -37,7 +37,7 @@ class Queue(metaclass=ABCMeta):
         else:
             return self._list[0]
 
-    def remove(self):
+    def pop(self):
         """
             Remove first element from a queue
 
@@ -57,7 +57,7 @@ class LIFOQueue(Queue):
     def add(self, element):
         self._list.insert(0, element)
 
-    def remove(self):
+    def pop(self):
         if self.is_empty():
             return None
         else:
@@ -71,7 +71,7 @@ class FIFOQueue(Queue):
     def add(self, element):
         self._list.append(element)
 
-    def remove(self):
+    def pop(self):
         if self.is_empty():
             return None
         else:
@@ -85,7 +85,7 @@ class PriorityQueue(Queue):
     def add(self, element):
         heappush(self._list, element)
 
-    def remove(self):
+    def pop(self):
         if self.is_empty():
             return None
         else:

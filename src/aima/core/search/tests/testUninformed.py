@@ -1,10 +1,33 @@
-from aima.core.search.Framework import Problem
-from aima.core.search.Uninformed import DepthLimitedSearch, IterativeDeepeningSearch
+from aima.core.search.Framework import Problem, TreeSearch
+from aima.core.search.Uninformed import DepthLimitedSearch, IterativeDeepeningSearch, DepthFirstSearch
 from aima.core.search.tests.Problem import TestActionsFunction, TestResultFunction, TestGoalTest
 
 __author__ = 'Ivan Mushketik'
 
 import unittest
+
+class TestDepthFirstSearch(unittest.TestCase):
+    def test_successful_search(self):
+        ts = TreeSearch()
+        dfs = DepthFirstSearch(ts)
+        problem = Problem(1, TestActionsFunction(), TestResultFunction(), TestGoalTest(4))
+
+        result = dfs.search(problem)
+        self.assertEqual(3, len(result))
+        metrics = dfs.get_metrics();
+        self.assertEqual(3, metrics[ts.METRIC_NODES_EXPANDED])
+        self.assertEqual(3, metrics[ts.METRIC_PATH_COST])
+
+    def test_search_failure(self):
+        ts = TreeSearch()
+        dfs = DepthFirstSearch(ts)
+        # 5 - is a goal state but it's unreachable
+        problem = Problem(1, TestActionsFunction(3), TestResultFunction(), TestGoalTest(5))
+
+        result = dfs.search(problem)
+        self.assertTrue(dfs.is_failure(result))
+        metrics = dfs.get_metrics();
+        self.assertEqual(13, metrics[ts.METRIC_NODES_EXPANDED])
 
 class TestDepthLimitSearch(unittest.TestCase):
     def test_successful_search(self):
@@ -12,12 +35,7 @@ class TestDepthLimitSearch(unittest.TestCase):
         problem = Problem(1, TestActionsFunction(), TestResultFunction(), TestGoalTest(4))
 
         result = dls.search(problem)
-        self.assertEquals(4, len(result))
-        
-        self.assertEquals(1, result[0].get_state())
-        self.assertEquals(2, result[1].get_state())
-        self.assertEquals(3, result[2].get_state())
-        self.assertEquals(4, result[3].get_state())
+        self.assertEquals(3, len(result))
 
     def test_search_cutoff(self):
         # Here we set depth limit 3...
@@ -46,12 +64,7 @@ class TestIterativeDeepeningSearch(unittest.TestCase):
         problem = Problem(1, TestActionsFunction(), TestResultFunction(), TestGoalTest(4))
 
         result = ids.search(problem)
-        self.assertEquals(4, len(result))
-        
-        self.assertEquals(1, result[0].get_state())
-        self.assertEquals(2, result[1].get_state())
-        self.assertEquals(3, result[2].get_state())
-        self.assertEquals(4, result[3].get_state())
+        self.assertEquals(3, len(result))
 
     def test_search_failure(self):
         ids = IterativeDeepeningSearch()

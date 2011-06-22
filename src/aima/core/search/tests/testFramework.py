@@ -53,8 +53,6 @@ class TestNodeExpander(unittest.TestCase):
         self.assertEqual(2, actionsList[2].get_state())
 
 
-
-
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
