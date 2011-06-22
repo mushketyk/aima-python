@@ -1,6 +1,4 @@
 from abc import ABCMeta
-from re import search
-from aima.core.Agent import Action
 from aima.core.AgentImpl import CutOffIndicatorAction
 from aima.core.search import Utils
 
@@ -259,11 +257,11 @@ class QueueSearch(NodeExpander, Search):
                 self._set_path_cost(root.get_path_cost())
                 return Utils.actions_from_nodes(root.get_path_from_root())
 
-        self._frontier.add(root)
+        self._add_to_frontier(root)
         self._set_new_queue_size()
         # while frontier isn't empty there are still states to check
         while not self._frontier.is_empty():
-            node_to_expand  = self._pop_from_frontier()
+            node_to_expand  = self._pop_node_from_frontier()
             self._set_new_queue_size()
 
             # if state shouldn't be checked before adding it's time to check it now
@@ -279,7 +277,7 @@ class QueueSearch(NodeExpander, Search):
                         self._set_path_cost(fn.get_path_cost())
                         return Utils.actions_from_nodes(fn.get_path_from_root())
 
-                self._frontier.add(fn)
+                self._add_to_frontier(fn)
 
             self._set_new_queue_size()
 
@@ -322,9 +320,14 @@ class QueueSearch(NodeExpander, Search):
     def get_path_cost(self):
         return self._metrics[self.METRIC_PATH_COST]
 
-    def _pop_from_frontier(self):
+    def _pop_node_from_frontier(self):
         return self._frontier.pop()
 
+    def _remove_node_from_frontier(self, to_remove):
+        return self._frontier.remove(to_remove)
+
+    def _add_to_frontier(self, to_add):
+        self._frontier.add(to_add)
         
  # Artificial Intelligence A Modern Approach (3rd Edition): Figure 3.7, page 77.
  # function TREE-SEARCH(problem) returns a solution, or failure
@@ -344,3 +347,84 @@ class TreeSearch(QueueSearch):
 
     def get_resulting_nodes_to_add_to_frontier(self, node_to_expand, problem):
         return self.expand_node(node_to_expand, problem)
+
+
+ # Artificial Intelligence A Modern Approach (3rd Edition): Figure 3.7, page 77.
+ #
+ # function GRAPH-SEARCH(problem) returns a solution, or failure
+ #   initialize the frontier using the initial state of problem
+ #   initialize the explored set to be empty
+ #   loop do
+ #     if the frontier is empty then return failure
+ #     choose a leaf node and remove it from the frontier
+ #     if the node contains a goal state then return the corresponding solution
+ #     add the node to the explored set
+ #     expand the chosen node, adding the resulting nodes to the frontier
+ #       only if not in the frontier or explored set
+ #
+ # Figure 3.7 An informal description of the general graph-search algorithm.
+class GraphSearch(QueueSearch):
+    """
+        When this search expand a node it checks if new node's state was explored before. If it was already explored
+        new node doesn't added to frontier.
+    """
+    def __init__(self):
+        super().__init__()
+        self._explored = set([])
+        self._frontier_state = {}
+        self._replace_frontier_node_at_state_cost_function = False
+
+    def get_replace_frontier_node_at_state_cost_function(self):
+        return self._replace_frontier_node_at_state_cost_function
+
+    def set_replace_frontier_node_at_state_cost_function(self, replace):
+        self._replace_frontier_node_at_state_cost_function = replace
+
+    def search(self, problem, frontier):
+        self._explored = set([])
+        self._frontier_state = {}
+        return super().search(problem, frontier)
+
+    def _pop_node_from_frontier(self):
+        to_remove = super()._pop_node_from_frontier()
+        if to_remove.get_state() in self._frontier_state.keys():
+            del self._frontier_state[to_remove.get_state()]
+        return to_remove
+
+    def _remove_node_from_frontier(self, to_remove):
+        removed = super()._remove_node_from_frontier(to_remove)
+        if removed:
+            del self._frontier_state[to_remove.get_state()]
+
+        return removed
+
+    def get_resulting_nodes_to_add_to_frontier(self, node_to_expand, problem):
+        add_to_frontier = []
+        self._explored.add(node_to_expand.get_state())
+
+        for cfn in self.expand_node(node_to_expand, problem):
+            yes_add_to_frontier = False
+
+            # If node wasn't expanded before - add it to frontier
+            if cfn.get_state() not in self._frontier_state.keys() and cfn.get_state() not in self._explored:
+                yes_add_to_frontier = True
+            # If node was expanded and we want to replace nodes with a smaller state cost ...
+            elif cfn.get_state() in self._frontier_state.keys() and self._replace_frontier_node_at_state_cost_function:
+                frontier_node = self._frontier_state[cfn.get_state()]
+                
+                cfn_cost = cfn.get_path_cost()
+                frontier_node_cost = frontier_node.get_path_cost()
+                # ... and new node's state cost is less that old node's state cost ...
+                if cfn_cost < frontier_node_cost:
+                    # ... add it to frontier
+                    yes_add_to_frontier = True
+
+                    self._remove_node_from_frontier(frontier_node)
+
+                    add_to_frontier.remove(frontier_node)
+
+            if yes_add_to_frontier:
+                add_to_frontier.append(cfn)
+                self._frontier_state[cfn.get_state()] = cfn
+
+        return add_to_frontier

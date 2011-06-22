@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from heapq import heappush, heappop
+from heapq import heappush, heappop, heapify
 
 __author__ = 'Ivan Mushketik'
 
@@ -49,6 +49,14 @@ class Queue(metaclass=ABCMeta):
         """ Return number of elements in a queue """
         return len(self._list)
 
+    def remove(self, to_remove):
+        """
+            Remove element from a queue
+
+            to_remove - element to remove
+            return - if element was deleted return true. Returns false otherwise.
+        """
+        raise NotImplementedError
 
 class LIFOQueue(Queue):
     def __init__(self):
@@ -62,6 +70,13 @@ class LIFOQueue(Queue):
             return None
         else:
             return self._list.pop(0)
+
+    def remove(self, to_remove):
+        if to_remove in self._list:
+            self._list.remove(to_remove)
+            return True
+        else:
+            return False
         
 
 class FIFOQueue(Queue):
@@ -77,8 +92,15 @@ class FIFOQueue(Queue):
         else:
             return self._list.pop(0)
 
+    def remove(self, to_remove):
+        if to_remove in self._list:
+            self._list.remove(to_remove)
+            return True
+        else:
+            return False
 
 class PriorityQueue(Queue):
+
     def __init__(self):
         super().__init__()
 
@@ -90,3 +112,11 @@ class PriorityQueue(Queue):
             return None
         else:
             return heappop(self._list)
+
+    def remove(self, to_remove):
+        if to_remove in self._list:
+            self._list.remove(to_remove)
+            heapify(self._list)
+            return True
+        else:
+            return False

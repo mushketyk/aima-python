@@ -5,6 +5,7 @@ from aima.core.Agent import Action
 import aima.core.search
 from aima.core.search.Framework import *
 from aima.core.search.tests.Problem import TestActionsFunction, TestResultFunction, TestGoalTest
+from aima.core.util.Datastructure import LIFOQueue
 
 __author__ = 'Ivan Mushketik'
 
@@ -52,6 +53,13 @@ class TestNodeExpander(unittest.TestCase):
         self.assertEqual(2, actionsList[1].get_state())
         self.assertEqual(2, actionsList[2].get_state())
 
+class TestGraphSearch(unittest.TestCase):
+    def test_successful_search(self):
+        gs = GraphSearch()
+        problem = Problem(1, TestActionsFunction(), TestResultFunction(), TestGoalTest(4))
+
+        result = gs.search(problem, LIFOQueue())
+        self.assertFalse(gs.is_failure(result))
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

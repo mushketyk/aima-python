@@ -1,10 +1,44 @@
-from aima.core.search.Framework import Problem, TreeSearch
-from aima.core.search.Uninformed import DepthLimitedSearch, IterativeDeepeningSearch, DepthFirstSearch
+from aima.core.search.Framework import Problem, TreeSearch, GraphSearch
+from aima.core.search.Uninformed import DepthLimitedSearch, IterativeDeepeningSearch, DepthFirstSearch, BreadthFirstSearch
 from aima.core.search.tests.Problem import TestActionsFunction, TestResultFunction, TestGoalTest
 
 __author__ = 'Ivan Mushketik'
 
 import unittest
+
+class TestBreathFirstSearch(unittest.TestCase):
+    def test_successful_search(self):
+        ts = TreeSearch()
+        bfs = BreadthFirstSearch(ts)
+        problem = Problem(1, TestActionsFunction(), TestResultFunction(), TestGoalTest(5))
+
+        result = bfs.search(problem)
+        self.assertEqual(4, len(result))
+        
+        metrics = bfs.get_metrics();
+        self.assertEqual(14, metrics[ts.METRIC_NODES_EXPANDED])
+        self.assertEqual(4, metrics[ts.METRIC_PATH_COST])
+
+    def test_failed_search(self):
+        ts = TreeSearch()
+        bfs = BreadthFirstSearch(ts)
+        problem = Problem(1, TestActionsFunction(3), TestResultFunction(), TestGoalTest(5))
+
+        result = bfs.search(problem)
+        self.assertTrue(bfs.is_failure(result))
+
+    def test_successful_search_with_graph_search(self):
+        gs = GraphSearch()
+        bfs = BreadthFirstSearch(gs)
+        problem = Problem(1, TestActionsFunction(), TestResultFunction(), TestGoalTest(5))
+
+        result = bfs.search(problem)
+        self.assertEqual(4, len(result))
+
+        metrics = bfs.get_metrics();
+        self.assertEqual(4, metrics[gs.METRIC_NODES_EXPANDED])
+        self.assertEqual(4, metrics[gs.METRIC_PATH_COST])
+
 
 class TestDepthFirstSearch(unittest.TestCase):
     def test_successful_search(self):

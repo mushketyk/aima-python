@@ -2,10 +2,45 @@
 from aima.core.Agent import Action
 from aima.core.AgentImpl import CutOffIndicatorAction
 from aima.core.search import Utils
-from aima.core.search.Framework import Search, NodeExpander, Node
-from aima.core.util.Datastructure import LIFOQueue
+from aima.core.search.Framework import Search, NodeExpander, Node, GraphSearch
+from aima.core.util.Datastructure import LIFOQueue, FIFOQueue
 
 __author__ = 'Ivan Mushketik'
+
+ # Artificial Intelligence A Modern Approach (3rd Edition): Figure 3.11, page 82.
+ #
+ # function BREADTH-FIRST-SEARCH(problem) returns a solution, or failure
+ #   node <- a node with STATE = problem.INITIAL-STATE, PATH-COST=0
+ #   if problem.GOAL-TEST(node.STATE) then return SOLUTION(node)
+ #   frontier <- a FIFO queue with node as the only element
+ #   explored <- an empty set
+ #   loop do
+ #      if EMPTY?(frontier) then return failure
+ #      node <- POP(frontier) // chooses the shallowest node in frontier
+ #      add node.STATE to explored
+ #      for each action in problem.ACTIONS(node.STATE) do
+ #          child <- CHILD-NODE(problem, node, action)
+ #          if child.STATE is not in explored or frontier then
+ #              if problem.GOAL-TEST(child.STATE) then return SOLUTION(child)
+ #              frontier <- INSERT(child, frontier)
+ #
+ # Figure 3.11 Breadth-first search on a graph.
+class BreadthFirstSearch(Search):
+    """
+        Breadth fist search explores root and and then explores all nodes at level n before it starts to
+        explore and node at level n + 1.
+
+        This search can use any implementation of QueueSearch.
+    """
+    def __init__(self, search = GraphSearch()):
+        self._search = search
+        search.set_check_goal_before_adding_to_frontier(True)
+
+    def search(self, problem):
+        return self._search.search(problem, FIFOQueue())
+
+    def get_metrics(self):
+        return self._search.get_metrics()
 
 # Artificial Intelligence A Modern Approach (3rd Edition): page 85.
 class DepthFirstSearch(Search):
