@@ -1,5 +1,7 @@
-from aima.core.search.Framework import EvaluationFunction, PathCostFunction, PrioritySearch
-from aima.core.util.Other import Comparator
+from aima.core.search import Utils
+from aima.core.search.Framework import EvaluationFunction, PathCostFunction, PrioritySearch, NodeExpander, Search, Node
+from aima.core.search.Utils import actions_from_nodes
+from aima.core.util.Other import Comparator, Infinity
 
 __author__ = 'Ivan Mushketik'
 
@@ -74,5 +76,102 @@ class AStarSearch(BestFirstSearch):
     """
     def __init__(self, queue_search, heuristic_function):
         super().__init__(queue_search, AStarEvaluationFunction(heuristic_function))
+
+class SearchResult:
+    def __init__(self, node, f_cost_limit):
+        self._node = node
+        self._f_cost_limit = f_cost_limit
+
+    def found_solution(self):
+        return self._node != None
+
+    def get_solution(self):
+        return self._node
+
+    def get_f_cost_limit(self):
+        return self._f_cost_limit
+
+class RecursiveBestFirstSearch(NodeExpander, Search):
+    MAX_RECURSIVE_DEPTH = "maxRecursiveDepth"
+    PATH_COST = "pathCost"
+
+    def __init__(self, evaluation_function):
+        super().__init__()
+        self._evaluation_function = evaluation_function
+
+    def clear_instrumentation(self):
+        super().clear_instrumentation()
+        self._metrics[self.MAX_RECURSIVE_DEPTH] = 0
+        self._metrics[self.PATH_COST] = 0
+
+    def search(self, problem):
+        self.clear_instrumentation()
+
+        root_node = Node(problem.get_initial_state())
+        sr = self._rbfs(problem, root_node, self._evaluation_function.f(root_node), Infinity(), 0)
+
+        if sr.found_solution():
+            goal_node = sr.get_solution()
+            return Utils.actions_from_nodes(goal_node.get_path_from_root())
+        else:
+            return self._failure()
+
+    def _rbfs(self, problem, node, node_f, f_limit, recursive_depth):
+        self._set_max_recursive_depth(recursive_depth)
+
+        if Utils.is_goal_state(problem, node):
+            return SearchResult(node, f_limit)
+
+        successors = self.expand_node(node ,problem)
+
+        if len(successors) == 0:
+            return SearchResult(None, Infinity())
+
+        f = [min(self._evaluation_function.f(node), node_f) for node in successors]
+
+        while True:
+            best_index = self._get_best_f_value_index(f)
+            if f[best_index] > f_limit:
+                return SearchResult(None, f[best_index])
+
+            alt_index = self._get_next_best_f_value_index(f, best_index)
+
+            sr = self._rbfs(problem, successors[best_index], f[best_index], min(f_limit, f[alt_index]), recursive_depth + 1)
+
+            if sr.found_solution():
+                return sr
+
+            f[best_index] = sr.get_f_cost_limit()
+
+    def _get_best_f_value_index(self, f):
+        best_index = 0
+        for i in range(1, len(f)):
+            if f[i] < f[best_index]:
+                best_index = i
+
+        return best_index
+
+    def _get_next_best_f_value_index(self, f, best_index):
+        alt_best_index = 0
+        for i in range(1, len(f)):
+            if f[i] < f[alt_best_index] and alt_best_index != best_index:
+                alt_best_index = i
+
+        return alt_best_index
+
+    def get_path_cost(self):
+        return self._metrics[self.PATH_COST]
+
+    def _set_path_cost(self, path_cost):
+        self._metrics[self.PATH_COST] = path_cost
+
+    def get_max_recursive_depth(self):
+        return self._metrics[self.MAX_RECURSIVE_DEPTH]
+
+    def _set_max_recursive_depth(self, recursive_depth):
+        max_recursive_depth = self._metrics[self.MAX_RECURSIVE_DEPTH]
+        if recursive_depth > max_recursive_depth:
+            self._metrics[self.MAX_RECURSIVE_DEPTH] = recursive_depth
+
 
 
