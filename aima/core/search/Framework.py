@@ -1,6 +1,7 @@
 from abc import ABCMeta
 from aima.core.AgentImpl import CutOffIndicatorAction
 from aima.core.search import Utils
+from core.util.Datastructure import PriorityQueue
 
 __author__ = 'Ivan Mushketik'
 
@@ -66,11 +67,11 @@ class DefaultStepCostFunction(StepCostFunction):
 
 
 class Problem:
-    def __init__(self, initialState, actionsFunction, resultFuntion, goalTest,
+    def __init__(self, initialState, actionsFunction, resultFunction, goalTest,
                         stepCostFunction=None):
         self._initialState = initialState
         self._actionsFunction = actionsFunction
-        self._resultFunction = resultFuntion
+        self._resultFunction = resultFunction
         self._goalTest = goalTest
 
         if stepCostFunction is not None:
@@ -372,13 +373,13 @@ class GraphSearch(QueueSearch):
         super().__init__()
         self._explored = set([])
         self._frontier_state = {}
-        self._replace_frontier_node_at_state_cost_function = False
+        self._comparator = None
 
-    def get_replace_frontier_node_at_state_cost_function(self):
-        return self._replace_frontier_node_at_state_cost_function
+    def get_node_comparator(self):
+        return self._comparator
 
-    def set_replace_frontier_node_at_state_cost_function(self, replace):
-        self._replace_frontier_node_at_state_cost_function = replace
+    def set_node_comparator(self, comparator):
+        self._comparator = comparator
 
     def search(self, problem, frontier):
         self._explored = set([])
@@ -409,13 +410,11 @@ class GraphSearch(QueueSearch):
             if cfn.get_state() not in self._frontier_state.keys() and cfn.get_state() not in self._explored:
                 yes_add_to_frontier = True
             # If node was expanded and we want to replace nodes with a smaller state cost ...
-            elif cfn.get_state() in self._frontier_state.keys() and self._replace_frontier_node_at_state_cost_function:
+            elif cfn.get_state() in self._frontier_state.keys() and self._comparator != None:
                 frontier_node = self._frontier_state[cfn.get_state()]
-                
-                cfn_cost = cfn.get_path_cost()
-                frontier_node_cost = frontier_node.get_path_cost()
+
                 # ... and new node's state cost is less that old node's state cost ...
-                if cfn_cost < frontier_node_cost:
+                if self._comparator(cfn, frontier_node) < 0:
                     # ... add it to frontier
                     yes_add_to_frontier = True
 
@@ -428,3 +427,37 @@ class GraphSearch(QueueSearch):
                 self._frontier_state[cfn.get_state()] = cfn
 
         return add_to_frontier
+
+
+class PrioritySearch(Search):
+    """
+        Base class for searches that use priority queues in queue searches.
+    """
+    def __init__(self, queue_search):
+        self._search = queue_search
+        super().__init__()
+
+    def search(self, problem):
+        comparator = self._get_comparator()
+
+        if isinstance(self._search, GraphSearch):
+            self._search.set_node_comparator(comparator)
+
+        return self._search.search(problem, PriorityQueue(comparator))
+
+    def _get_comparator(self):
+        """
+            Get comparator that is used to compare nodes
+            
+        """
+        raise NotImplementedError()
+
+# Artificial Intelligence A Modern Approach (3rd Edition): page 92
+class EvaluationFunction(metaclass=ABCMeta):
+    def f(self, node):
+        raise NotImplementedError()
+
+# Artificial Intelligence A Modern Approach (3rd Edition): page 92
+class HeuristicFunction(metaclass=ABCMeta):
+    def h(self, state):
+        raise NotImplementedError()

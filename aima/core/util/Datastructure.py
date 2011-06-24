@@ -1,5 +1,4 @@
 from abc import ABCMeta
-from heapq import heappush, heappop, heapify
 
 __author__ = 'Ivan Mushketik'
 
@@ -43,7 +42,10 @@ class Queue(metaclass=ABCMeta):
 
             return return removed element if queue was not empty, or None otherwise
         """
-        raise NotImplementedError
+        if self.is_empty():
+            return None
+        else:
+            return self._list.pop(0)
 
     def length(self):
         """ Return number of elements in a queue """
@@ -56,7 +58,12 @@ class Queue(metaclass=ABCMeta):
             to_remove - element to remove
             return - if element was deleted return true. Returns false otherwise.
         """
-        raise NotImplementedError
+        if to_remove in self._list:
+            self._list.remove(to_remove)
+            return True
+        else:
+            return False
+        
 
 class LIFOQueue(Queue):
     def __init__(self):
@@ -65,19 +72,6 @@ class LIFOQueue(Queue):
     def add(self, element):
         self._list.insert(0, element)
 
-    def pop(self):
-        if self.is_empty():
-            return None
-        else:
-            return self._list.pop(0)
-
-    def remove(self, to_remove):
-        if to_remove in self._list:
-            self._list.remove(to_remove)
-            return True
-        else:
-            return False
-        
 
 class FIFOQueue(Queue):
     def __init__(self):
@@ -86,37 +80,35 @@ class FIFOQueue(Queue):
     def add(self, element):
         self._list.append(element)
 
-    def pop(self):
-        if self.is_empty():
-            return None
-        else:
-            return self._list.pop(0)
-
-    def remove(self, to_remove):
-        if to_remove in self._list:
-            self._list.remove(to_remove)
-            return True
-        else:
-            return False
-
 class PriorityQueue(Queue):
-
-    def __init__(self):
+    def __init__(self, comparator):
         super().__init__()
+        self._comparator = comparator
 
     def add(self, element):
-        heappush(self._list, element)
+        (pos, found) = self._binary_search(element)
+        self._list.insert(pos, element)
 
-    def pop(self):
-        if self.is_empty():
-            return None
-        else:
-            return heappop(self._list)
+    def remove(self, element):
+        (pos, found) = self._binary_search(element)
+        if found:
+            del self._list[pos]
+        return found
 
-    def remove(self, to_remove):
-        if to_remove in self._list:
-            self._list.remove(to_remove)
-            heapify(self._list)
-            return True
-        else:
-            return False
+    def _binary_search(self, element):
+        l = 0
+        r = len(self._list) - 1
+
+        while l <= r:
+            m = (l + r) // 2
+            middle_el = self._list[m]
+
+            if self._comparator.compare(middle_el, element) < 0:
+                l = m + 1
+            elif self._comparator.compare(middle_el, element) > 0:
+                r = m - 1
+            else:
+                return (m, True)
+
+        return (l, False)
+
