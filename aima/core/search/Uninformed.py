@@ -2,8 +2,9 @@
 from aima.core.Agent import Action
 from aima.core.AgentImpl import CutOffIndicatorAction
 from aima.core.search import Utils
-from aima.core.search.Framework import Search, NodeExpander, Node, GraphSearch
+from aima.core.search.Framework import Search, NodeExpander, Node, GraphSearch, PrioritySearch
 from aima.core.util.Datastructure import LIFOQueue, FIFOQueue
+from aima.core.util.Other import Comparator
 
 __author__ = 'Ivan Mushketik'
 
@@ -41,6 +42,41 @@ class BreadthFirstSearch(Search):
 
     def get_metrics(self):
         return self._search.get_metrics()
+
+ # Artificial Intelligence A Modern Approach (3rd Edition): Figure 3.14, page 84.
+ #
+ # function UNIFORM-COST-SEARCH(problem) returns a solution, or failure
+ #   node <- a node with STATE = problem.INITIAL-STATE, PATH-COST = 0
+ #   frontier <- a priority queue ordered by PATH-COST, with node as the only element
+ #   explored <- an empty set
+ #   loop do
+ #      if EMPTY?(frontier) then return failure
+ #      node <- POP(frontier) // chooses the lowest-cost node in frontier
+ #      if problem.GOAL-TEST(node.STATE) then return SOLUTION(node)
+ #      add node.STATE to explored
+ #      for each action in problem.ACTIONS(node.STATE) do
+ #          child <- CHILD-NODE(problem, node, action)
+ #          if child.STATE is not in explored or frontier then
+ #             frontier <- INSERT(child, frontier)
+ #          else if child.STATE is in frontier with higher PATH-COST then
+ #             replace that frontier node with child
+class UniformCostSearch(PrioritySearch):
+    """
+        This search explores nodes with the lowest search path cost first.
+    """
+    def __init__(self, queue_search = None):
+        if queue_search == None:
+            queue_search = GraphSearch()
+
+        super().__init__(queue_search)
+
+    def _get_comparator(self):
+        class PathCostComparator(Comparator):
+            def compare(self, node1, node2):
+                pass
+
+        return PathCostComparator()
+
 
 # Artificial Intelligence A Modern Approach (3rd Edition): page 85.
 class DepthFirstSearch(Search):

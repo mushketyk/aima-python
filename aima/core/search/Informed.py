@@ -26,6 +26,24 @@ class BestFirstSearch(PrioritySearch):
         return comparator
 
 
+# Artificial Intelligence A Modern Approach (3rd Edition): page 92.
+class GreedyBestFirstSearchEvaluationFunction(EvaluationFunction):
+    def __init__(self, heuristic_function):
+        self._heuristic_function = heuristic_function
+
+    def f(self, node):
+        return self._heuristic_function.f(node)
+
+
+# Artificial Intelligence A Modern Approach (3rd Edition): page 92.
+class GreedyBestFirstSearch(BestFirstSearch):
+    """
+        BGFS explores nodes with better heuristic function evaluation first.
+    """
+    def __init__(self, queue_search, heuristic_function):
+        super().__init__(queue_search, GreedyBestFirstSearchEvaluationFunction())
+        
+
 # Artificial Intelligence A Modern Approach (3rd Edition): page 93.
 class AStarEvaluationFunction(EvaluationFunction):
     """
@@ -56,3 +74,5 @@ class AStarSearch(BestFirstSearch):
     """
     def __init__(self, queue_search, heuristic_function):
         super().__init__(queue_search, AStarEvaluationFunction(heuristic_function))
+
+
