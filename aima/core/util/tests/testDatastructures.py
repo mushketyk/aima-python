@@ -1,5 +1,6 @@
-from aima.core.util.Datastructure import LIFOQueue, FIFOQueue, PriorityQueue
-from core.util.Other import Comparator
+from aima.core.util.Datastructure import LIFOQueue, FIFOQueue, PriorityQueue, LabeledGraph
+from aima.core.util.Other import Comparator
+
 
 __author__ = 'Ivan Mushketik'
 
@@ -161,6 +162,51 @@ class TestPriorityQueue(unittest.TestCase):
         self.assertEqual(10, priorityQueue.pop())
         self.assertEqual(5, priorityQueue.pop())
 
+
+class LabeledGraphTest(unittest.TestCase):
+    def test_get_vertexes(self):
+        lg = LabeledGraph()
+        expected_vertexes = ('vertex1', 'vertex2')
+
+        for vertex in expected_vertexes:
+            lg.add_vertex(vertex)
+
+        result_vertexes = lg.vertexes()
+        self.assertEqual(2, len(result_vertexes))
+        self.assertEqual(set(expected_vertexes), set(result_vertexes))
+
+    def test_set_label(self):
+        lg = LabeledGraph()
+        lg.set_edge('v1', 'v2', 5)
+        lg.set_edge('v2', 'v3', 10)
+
+        self.assertEqual(5, lg.get_edge('v1', 'v2'))
+        self.assertEqual(10, lg.get_edge('v2', 'v3'))
+
+    def test_remove_vertex(self):
+        lg = LabeledGraph()
+        lg.set_edge('t1', 's1', 2)
+        lg.set_edge('t1', 's2', 3)
+
+        lg.remove_vertex('t1')
+
+        exp_vertexes = ['s1', 's2']
+        self.assertEqual(set(lg.vertexes()), set(exp_vertexes))
+
+        self.assertEqual(None, lg.get_edge('t1', 's1'))
+        self.assertEqual(None, lg.get_edge('t1', 's2'))
+
+    def test_get_successors(self):
+        lg = LabeledGraph()
+        lg.set_edge('s1', 't1', 10)
+        lg.set_edge('s1', 't2', 10)
+        lg.set_edge('s1', 't3', 10)
+
+        lg.set_edge('s2', 't1', 10)
+        lg.set_edge('s2', 't2', 10)
+
+        self.assertEqual(set(lg.get_successors('s1')), set(['t1', 't2', 't3']))
+        self.assertEqual(set(lg.get_successors('s2')), set(['t1', 't2']))
 
 if __name__ == '__main__':
     unittest.main()

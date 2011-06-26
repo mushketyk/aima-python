@@ -8,6 +8,9 @@ __author__ = 'Ivan Mushketik'
 #
 
 class TestAction(Action):
+    def __init__(self):
+        super().__init__("testAction")
+
     def is_noop(self):
         return False
 

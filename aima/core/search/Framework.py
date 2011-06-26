@@ -1,7 +1,7 @@
 from abc import ABCMeta
 from aima.core.AgentImpl import CutOffIndicatorAction
 from aima.core.search import Utils
-from core.util.Datastructure import PriorityQueue
+from aima.core.util.Datastructure import PriorityQueue
 
 __author__ = 'Ivan Mushketik'
 

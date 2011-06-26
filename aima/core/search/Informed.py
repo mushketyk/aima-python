@@ -91,7 +91,31 @@ class SearchResult:
     def get_f_cost_limit(self):
         return self._f_cost_limit
 
+# Artificial Intelligence A Modern Approach (3rd Edition): Figure 3.26, page 99.
+#
+# function RECURSIVE-BEST-FIRST-SEARCH(problem) returns a solution, or failure
+#   return RBFS(problem, MAKE-NODE(problem.INITIAL-STATE), infinity)
+#
+# function RBFS(problem, node, f_limit) returns a solution, or failure and a new f-cost limit
+#   if problem.GOAL-TEST(node.STATE) then return SOLUTION(node)
+#   successors <- []
+#   for each action in problem.ACTION(node.STATE) do
+#       add CHILD-NODE(problem, node, action) into successors
+#   if successors is empty then return failure, infinity
+#   for each s in successors do // update f with value from previous search, if any
+#     s.f <- max(s.g + s.h, node.f)
+#   repeat
+#     best <- the lowest f-value node in successors
+#     if best.f > f_limit then return failure, best.f
+#     alternative <- the second-lowest f-value among successors
+#     result, best.f <- RBFS(problem, best, min(f_limit, alternative))
+#     if result != failure then return result
+#
+# Figure 3.26 The algorithm for recursive best-first search.
 class RecursiveBestFirstSearch(NodeExpander, Search):
+    """
+        Version of A* algorithm that using linear space
+    """
     MAX_RECURSIVE_DEPTH = "maxRecursiveDepth"
     PATH_COST = "pathCost"
 
@@ -104,9 +128,11 @@ class RecursiveBestFirstSearch(NodeExpander, Search):
         self._metrics[self.MAX_RECURSIVE_DEPTH] = 0
         self._metrics[self.PATH_COST] = 0
 
+    # function RECURSIVE-BEST-FIRST-SEARCH(problem) returns a solution, or failure
     def search(self, problem):
         self.clear_instrumentation()
 
+        # RBFS(problem, MAKE-NODE(INITIAL-STATE[problem]), infinity)
         root_node = Node(problem.get_initial_state())
         sr = self._rbfs(problem, root_node, self._evaluation_function.f(root_node), Infinity(), 0)
 
@@ -116,34 +142,49 @@ class RecursiveBestFirstSearch(NodeExpander, Search):
         else:
             return self._failure()
 
+    # function RBFS(problem, node, f_limit) returns a solution, or failure and a new f-cost limit
     def _rbfs(self, problem, node, node_f, f_limit, recursive_depth):
         self._set_max_recursive_depth(recursive_depth)
 
+        # if problem.GOAL-TEST(node.STATE) then return SOLUTION(node)
         if Utils.is_goal_state(problem, node):
             return SearchResult(node, f_limit)
 
+        # successors <- []
+		# for each action in problem.ACTION(node.STATE) do
+		# add CHILD-NODE(problem, node, action) into successors
         successors = self.expand_node(node ,problem)
 
+        # if successors is empty then return failure, infinity
         if len(successors) == 0:
             return SearchResult(None, Infinity())
 
-        f = [min(self._evaluation_function.f(node), node_f) for node in successors]
+        # for each s in successors do
+		# update f with value from previous search, if any
+        f = [max(self._evaluation_function.f(node), node_f) for node in successors]
 
+        # repeat
         while True:
+            # best <- the lowest f-value node in successors
             best_index = self._get_best_f_value_index(f)
+            # if best.f > f_limit then return failure, best.f
             if f[best_index] > f_limit:
                 return SearchResult(None, f[best_index])
 
+            # if best.f > f_limit then return failure, best.f
             alt_index = self._get_next_best_f_value_index(f, best_index)
-
+            # result, best.f <- RBFS(problem, best, min(f_limit, alternative))
             sr = self._rbfs(problem, successors[best_index], f[best_index], min(f_limit, f[alt_index]), recursive_depth + 1)
+            f[best_index] = sr.get_f_cost_limit()
 
+            # if result != failure then return result
             if sr.found_solution():
                 return sr
 
-            f[best_index] = sr.get_f_cost_limit()
-
     def _get_best_f_value_index(self, f):
+        """
+            Get best heuristic function result
+        """
         best_index = 0
         for i in range(1, len(f)):
             if f[i] < f[best_index]:
@@ -152,6 +193,9 @@ class RecursiveBestFirstSearch(NodeExpander, Search):
         return best_index
 
     def _get_next_best_f_value_index(self, f, best_index):
+        """
+            Get second best heuristic function result
+        """
         alt_best_index = 0
         for i in range(1, len(f)):
             if f[i] < f[alt_best_index] and alt_best_index != best_index:

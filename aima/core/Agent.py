@@ -3,6 +3,8 @@ from abc import ABCMeta
 __author__ = 'Ivan Mushketik'
 
 class Action(metaclass=ABCMeta):
+    def __init__(self, name):
+        self.name = name
 
     def is_noop(self):
         raise NotImplementedError()
