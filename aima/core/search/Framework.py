@@ -8,60 +8,55 @@ __author__ = 'Ivan Mushketik'
 #  Artificial Intelligence A Modern Approach (3rd Edition): page 67.
 class ActionFunction(metaclass=ABCMeta):
 
+    ##
+    # Return set of actions that is possible in a current state
+    # @param state - current state
     def actions(self, state):
-        """
-            Return set of actions that is possible in a current state
-            state - current state
-        """
         raise NotImplementedError()
 
 # Artificial Intelligence A Modern Approach (3rd Edition): page 67.
 class ResultFunction(metaclass=ABCMeta):
 
+    ##
+    # Return a state that results from doing action in a current state
+    # @param state - current state
+    # @param action - action to do
+    #
+    # @return new state
     def result(self, state, action):
-        """
-            Return a state that results from doing action in a current state
-            state - current state
-            action - action to do
-
-            return new state
-        """
-        raise NotImplementedError();
+        raise NotImplementedError()
 
 # Artificial Intelligence A Modern Approach (3rd Edition): page 67
 class GoalTest(metaclass=ABCMeta):
 
+    ##
+    # Check if current state is a goal state
+    # @return True if state is a goal state or False otherwise
     def is_goal_state(self, state):
-        """
-        Check if current state is a goal state
-        Returns true if state is a goal state or false otherwise
-        """
-        raise NotImplementedError("GoalTest is an abstract class");
+        raise NotImplementedError("GoalTest is an abstract class")
 
 
 # Artificial Intelligence A Modern Approach (3rd Edition): page 68
 class StepCostFunction(metaclass=ABCMeta):
+    ##
+    # Calculate cost of taking action to perform state changing.
+    #
+    # @param state - state from which action is to be performed
+    # @param action - action to be performed
+    # @param newState - state reached by performing an action
+    #
+    # @return cost of performing an action
     def c(self, state, action, newState):
-        """
-            Calculate cost of taking action to perform state changing.
-
-            state - state from which action is to be performed
-            action - action to be performed
-            newState - state reached by performing an action
-
-            return - cost of performing an action
-        """
-        raise NotImplementedError("StepCostFunction is an abstract class");
+        raise NotImplementedError("StepCostFunction is an abstract class")
 
 
 class DefaultStepCostFunction(StepCostFunction):
-
-    def __init__(self):
-        pass
-
     """
         Step cost function that returns 1 for every action
     """
+    def __init__(self):
+        pass
+
     def c(self, state, action, newState):
         return 1
 
@@ -99,6 +94,10 @@ class Problem:
 
 # Artificial Intelligence A Modern Approach (3rd Edition): Figure 3.10, page 79
 class Node:
+    """
+    Node that is created during search in state space. Each node refers a state in a state space, parent node,
+    path cost of reaching this node's state and action that was done to explore this node's state.
+    """
     def __init__(self, state, stepCost=0, parent=None, action=None):
         self._state = state        
         self._parent = parent
@@ -123,7 +122,11 @@ class Node:
     
     def is_root_node(self):
         return self._parent is None
-    
+
+    ##
+    # Get nodes that were explored to reach current node
+    #
+    # @return list of nodes from root node to a current one.
     def get_path_from_root(self):
         node = self;
         path = []
@@ -140,12 +143,15 @@ class Node:
 
 # Artificial Intelligence A Modern Approach (3rd Edition): page 78.
 class PathCostFunction:
+    ##
+    # Return cost from the initial state to a current state.
+    #
+    # @param node - node to calculate path cost for
+    # @return Something
     def g(self, node):
         """
-        Return cost from the initial state to a current state.        
         """
         return node.get_path_cost()
-
 
 
 class NodeExpander:
@@ -159,15 +165,17 @@ class NodeExpander:
         self._metrics[NodeExpander.METRIC_NODES_EXPANDED] = 0
         
     def get_nodes_expanded(self):
-        pass
+        return self._metrics[NodeExpander.METRIC_NODES_EXPANDED]
        
     def get_metrics(self):
         return self._metrics
-        
-    def expand_node(self, node, problem):
-        """
 
-        """
+    ##
+    # Expand a node and return nodes with states that are reachable from a current node
+    #
+    # @param node - node to explore
+    # @return list of nodes with reachable states
+    def expand_node(self, node, problem):
         childNodes = []
 
         currentState = node.get_state()
@@ -190,25 +198,27 @@ class Search(metaclass=ABCMeta):
     def search(self, problem):
         raise NotImplementedError()
 
+    ##
+    # Get metrics collected during search run
+    #
+    # @return dict with metrics
     def get_metrics(self):
         raise NotImplementedError()
 
+    ##
+    # Check if search ended because of cutoff
+    #
+    # @param result - result of a search
+    # @return True if cutoff occurred, False otherwise
     def is_cutoff(self, result):
-        """
-            Check if search ended because of cutoff.
-
-            result - result of limited DFS
-            return True if cutoff occurred, or False otherwise
-        """
         return (len(result) == 1) and (result[0] == CutOffIndicatorAction())
 
+    ##
+    #   Check if search ended because of failure.
+    #
+    #   @param result - result of limited DFS
+    #   @return True if failure occurred, or False otherwise
     def is_failure(self, result):
-        """
-            Check if search ended because of failure.
-
-            result - result of limited DFS
-            return True if failure occurred, or False otherwise
-        """
         return len(result) == 0
 
     def _cutoff(self):
@@ -239,15 +249,15 @@ class QueueSearch(NodeExpander, Search):
         self._metrics[self.METRIC_PATH_COST] = 0
         self._metrics[self.METRIC_MAX_QUEUE_SIZE] = 0
 
+    ##
+    # Search for a solution saving new expanded nodes to a queue.
+    # @param problem - problem to solve
+    # @param frontier - Datastructures.Queue that implements certain discipline
+    #
+    # @return If solution was found return a list of actions to reach goal state from an initial state. If
+    # initial state is a goal state this method returns a list with a NoOpAction. If failed to find a solution
+    # it returns an empty list.
     def search(self, problem, frontier):
-        """
-            problem - problem to solve
-            frontier = Datastructures.Queue that implements ceratain discipline
-
-            return - If solution was found return a list of actions to reach goal state from an initial state. If
-            initial state is a goal state this method returns a list with a NoOpAction. If failed to find a solution
-            it returns an empty list.
-        """
         self._frontier = frontier
         self.clear_instrumentation()
 
@@ -284,7 +294,6 @@ class QueueSearch(NodeExpander, Search):
 
         # if we are here, all frontier is empty and a goal state wasn't found. Search failed
         return self._failure()
-
 
     def is_check_goal_before_adding_to_frontier(self):
         return self._check_goal_before_adding_to_frontier
@@ -448,7 +457,6 @@ class PrioritySearch(Search):
     def _get_comparator(self):
         """
             Get comparator that is used to compare nodes
-            
         """
         raise NotImplementedError()
 
