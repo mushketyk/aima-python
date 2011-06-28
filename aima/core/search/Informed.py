@@ -4,6 +4,7 @@ from aima.core.search.Utils import actions_from_nodes
 from aima.core.util.Other import Comparator, Infinity
 
 __author__ = 'Ivan Mushketik'
+__docformat__ = 'restructuredtext en'
 
 # Artificial Intelligence A Modern Approach (3rd Edition): page 92.
 class BestFirstSearch(PrioritySearch):
@@ -63,6 +64,8 @@ class AStarEvaluationFunction(EvaluationFunction):
             f(n) - result of this function
             g(n) - cost of a path from initial state to a current state
             h(n) - approximation of a path cost from a current state to a goal state
+
+            :param (Node) node: node that is used to calculate evaluation function
         """
         return self._path_cost_function.g(node) + self._heuristic_function.h(node.get_state())
 

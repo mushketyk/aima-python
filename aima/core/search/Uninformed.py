@@ -7,6 +7,7 @@ from aima.core.util.Datastructure import LIFOQueue, FIFOQueue
 from aima.core.util.Other import Comparator
 
 __author__ = 'Ivan Mushketik'
+__docformat__ = 'restructuredtext en'
 
  # Artificial Intelligence A Modern Approach (3rd Edition): Figure 3.11, page 82.
  #

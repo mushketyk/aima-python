@@ -1,6 +1,7 @@
 from abc import ABCMeta
 
 __author__ = 'Ivan Mushketik'
+__docformat__ = 'restructuredtext en'
 
 class Action(metaclass=ABCMeta):
     def __init__(self, name):

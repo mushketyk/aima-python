@@ -1,6 +1,7 @@
 from aima.core.Agent import Action
 
 __author__ = 'Ivan Mushketik'
+__docformat__ = 'restructuredtext en'
 
 
 class CutOffIndicatorAction(Action):

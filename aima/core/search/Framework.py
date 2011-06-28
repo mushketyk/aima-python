@@ -4,49 +4,54 @@ from aima.core.search import Utils
 from aima.core.util.Datastructure import PriorityQueue
 
 __author__ = 'Ivan Mushketik'
+__docformat__ = 'restructuredtext en'
 
 #  Artificial Intelligence A Modern Approach (3rd Edition): page 67.
 class ActionFunction(metaclass=ABCMeta):
-
-    ##
-    # Return set of actions that is possible in a current state
-    # @param state - current state
     def actions(self, state):
+        """
+        Return set of actions that is possible in a current state
+        
+        :param state: state for which possible actions should be returned
+        :return (list): list of actions that can be performed
+        """
         raise NotImplementedError()
 
 # Artificial Intelligence A Modern Approach (3rd Edition): page 67.
 class ResultFunction(metaclass=ABCMeta):
-
-    ##
-    # Return a state that results from doing action in a current state
-    # @param state - current state
-    # @param action - action to do
-    #
-    # @return new state
     def result(self, state, action):
+        """
+        Return a state that results from doing action in a current state
+
+        :param state: current state
+        :param action: action to do
+        :return: new state
+        """
         raise NotImplementedError()
 
 # Artificial Intelligence A Modern Approach (3rd Edition): page 67
 class GoalTest(metaclass=ABCMeta):
-
-    ##
-    # Check if current state is a goal state
-    # @return True if state is a goal state or False otherwise
     def is_goal_state(self, state):
+        """
+        Check if current state is a goal state
+
+        :param state:
+        :return (bool): True if state is a goal state or False otherwise
+        """
         raise NotImplementedError("GoalTest is an abstract class")
 
 
 # Artificial Intelligence A Modern Approach (3rd Edition): page 68
 class StepCostFunction(metaclass=ABCMeta):
-    ##
-    # Calculate cost of taking action to perform state changing.
-    #
-    # @param state - state from which action is to be performed
-    # @param action - action to be performed
-    # @param newState - state reached by performing an action
-    #
-    # @return cost of performing an action
     def c(self, state, action, newState):
+        """
+        Calculate cost of taking action to perform state changing.
+
+        :param state: state from which action is to be performed
+        :param action: action to be performed
+        :param newState: state reached by performing an action
+        :return: cost of performing an action
+        """
         raise NotImplementedError("StepCostFunction is an abstract class")
 
 
@@ -123,11 +128,12 @@ class Node:
     def is_root_node(self):
         return self._parent is None
 
-    ##
-    # Get nodes that were explored to reach current node
-    #
-    # @return list of nodes from root node to a current one.
     def get_path_from_root(self):
+        """
+        Get nodes that were explored to reach current node
+
+        :return (list): list of nodes from root node to a current one.
+        """
         node = self;
         path = []
         
@@ -143,13 +149,12 @@ class Node:
 
 # Artificial Intelligence A Modern Approach (3rd Edition): page 78.
 class PathCostFunction:
-    ##
-    # Return cost from the initial state to a current state.
-    #
-    # @param node - node to calculate path cost for
-    # @return Something
     def g(self, node):
         """
+        Return cost from the initial state to a current state.
+
+        :param node: node to calculate path cost for
+        :return: cost of the path from the root node
         """
         return node.get_path_cost()
 
@@ -170,12 +175,14 @@ class NodeExpander:
     def get_metrics(self):
         return self._metrics
 
-    ##
-    # Expand a node and return nodes with states that are reachable from a current node
-    #
-    # @param node - node to explore
-    # @return list of nodes with reachable states
     def expand_node(self, node, problem):
+        """
+        Expand a node and return nodes with states that are reachable from a current node
+
+        :param node: node to explore
+        :param problem:
+        :return (list): list of nodes with reachable states
+        """
         childNodes = []
 
         currentState = node.get_state()
@@ -198,27 +205,30 @@ class Search(metaclass=ABCMeta):
     def search(self, problem):
         raise NotImplementedError()
 
-    ##
-    # Get metrics collected during search run
-    #
-    # @return dict with metrics
     def get_metrics(self):
+        """
+        Get metrics collected during search run
+        
+        :return (dict): search's metrics
+        """
         raise NotImplementedError()
 
-    ##
-    # Check if search ended because of cutoff
-    #
-    # @param result - result of a search
-    # @return True if cutoff occurred, False otherwise
     def is_cutoff(self, result):
+        """
+        Check if search ended because of cutoff
+
+        :param result: result of a search
+        :return (bool): True if cutoff occurred, False otherwise
+        """
         return (len(result) == 1) and (result[0] == CutOffIndicatorAction())
 
-    ##
-    #   Check if search ended because of failure.
-    #
-    #   @param result - result of limited DFS
-    #   @return True if failure occurred, or False otherwise
     def is_failure(self, result):
+        """
+        Check if search ended because of failure.
+
+        :param result: result of limited DFS
+        :return (bool): True if failure occurred, or False otherwise
+        """
         return len(result) == 0
 
     def _cutoff(self):
@@ -248,16 +258,17 @@ class QueueSearch(NodeExpander, Search):
         self._metrics[self.METRIC_QUEUE_SIZE] = 0
         self._metrics[self.METRIC_PATH_COST] = 0
         self._metrics[self.METRIC_MAX_QUEUE_SIZE] = 0
-
-    ##
-    # Search for a solution saving new expanded nodes to a queue.
-    # @param problem - problem to solve
-    # @param frontier - Datastructures.Queue that implements certain discipline
-    #
-    # @return If solution was found return a list of actions to reach goal state from an initial state. If
-    # initial state is a goal state this method returns a list with a NoOpAction. If failed to find a solution
-    # it returns an empty list.
+        
     def search(self, problem, frontier):
+        """
+        Search for a solution saving new expanded nodes to a queue.
+
+        :param problem: problem to solve
+        :param frontier (Datastructures.Queue): that implements certain discipline
+        :return: If solution was found return a list of actions to reach goal state from an initial state. If
+        initial state is a goal state this method returns a list with a NoOpAction. If failed to find a solution
+        it returns an empty list.
+        """
         self._frontier = frontier
         self.clear_instrumentation()
 

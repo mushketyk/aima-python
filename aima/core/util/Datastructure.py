@@ -2,6 +2,7 @@ from abc import ABCMeta
 from math import sqrt
 
 __author__ = 'Ivan Mushketik'
+__docformat__ = 'restructuredtext en'
 
 class Queue(metaclass=ABCMeta):
     """
@@ -12,25 +13,26 @@ class Queue(metaclass=ABCMeta):
 
     def is_empty(self):
         """
-            Check if queue is empty
+        Check if queue is empty.
 
-            return True if equeue is empty, or False otherwise
+        :return (bool): True if queue is empty, False otherwise.
         """
         return len(self._list) == 0
 
     def add(self, element):
         """
-            Add new element to a queue.
+        Add new element to a queue
 
-            element - new element to add
+        :param element: an element to add.
+        :return: None
         """
         raise NotImplementedError
 
     def element(self):
         """
-            Return first element from a queue
-
-            return first element if queue isn't empty, or None otherwise
+        Return first element from a queue
+        
+        :return: first element if queue isn't empty, or None otherwise
         """
         if self.is_empty():
             return None
@@ -39,9 +41,9 @@ class Queue(metaclass=ABCMeta):
 
     def pop(self):
         """
-            Remove first element from a queue
+        Remove first element from a queue
 
-            return return removed element if queue was not empty, or None otherwise
+        :return: removed element if queue was not empty, or None otherwise
         """
         if self.is_empty():
             return None
@@ -49,15 +51,19 @@ class Queue(metaclass=ABCMeta):
             return self._list.pop(0)
 
     def length(self):
-        """ Return number of elements in a queue """
+        """
+        Return number of elements in a queue.
+
+        :return (int): number of elements in a queue.
+        """
         return len(self._list)
 
     def remove(self, to_remove):
         """
-            Remove element from a queue
+        Remove an element from a queue
 
-            to_remove - element to remove
-            return - if element was deleted return true. Returns false otherwise.
+        :param to_remove: an element to remove
+        :return (bool): True if an element was removed, False otherwise
         """
         if to_remove in self._list:
             self._list.remove(to_remove)
@@ -123,6 +129,12 @@ class Point2D:
         self.y = y
 
     def distance(self, point):
+        """
+        Calculate distance to other point.
+
+        :param point: point to calculate distance to.
+        :return (float): distance between self and specified point.
+        """
         x_diff = self.x - point.x
         y_diff = self.y - point.y
 
@@ -138,22 +150,33 @@ class LabeledGraph:
 
     def add_vertex(self, vertex):
         """
-            Add a vertex to a graph. If a vertex already exist in graph no vertex will be added.
+         Add a vertex to a graph. If a vertex already exist in graph no vertex will be added.
+
+        :param vertex: a vertex to add
+        :return: None
         """
         if self.graph.get(vertex) == None:
             self.graph[vertex] = {}
 
     def remove_vertex(self, vertex):
         """
-            Remove vertex from a graph
+        Remove vertex from a graph
+
+        :param vertex: vertex to remove
+        :return: None
         """
         if self.graph.get(vertex) != None:
             del self.graph[vertex]
 
     def set_edge(self, from_vertex, to_vertex, label):
         """
-            Set label for an edge between from_vertex and to_vertex. If no edge exists between this vertexes
-            new edge will be created
+        Set label for an edge between from_vertex and to_vertex. If no edge exists between this vertexes
+        new edge will be created
+
+        :param from_vertex:
+        :param to_vertex:
+        :param label: label to set to an edge.
+        :return: None
         """
         self.add_vertex(from_vertex)
         self.add_vertex(to_vertex)
@@ -161,7 +184,11 @@ class LabeledGraph:
 
     def get_edge(self, from_vertex, to_vertex):
         """
-            Get label from edge. If no edge exists None is returned
+        Get label of a graph's edge
+
+        :param from_vertex:
+        :param to_vertex:
+        :return: label of a graph's edge.
         """
         if self.graph.get(from_vertex) != None and self.graph.get(to_vertex) != None:
             return self.graph[from_vertex][to_vertex]
@@ -170,19 +197,28 @@ class LabeledGraph:
 
     def remove_edge(self, from_vertex, to_vertex):
         """
-            Remove edge from a graph if one exists
+        Remove edge from a graph
+
+        :param from_vertex:
+        :param to_vertex:
+        :return: None
         """
         self.set_edge(from_vertex, to_vertex, None)
 
     def vertexes(self):
         """
             Get all vertexes in a graph
+
+            :return (list): 
         """
         return self.graph.keys()
 
     def get_successors(self, vertex):
         """
-            Get vertexes connected to a specified vertex
+        Get vertexes connected to a specified vertex
+
+        :param vertex: - a vertex
+        :return (list): list of connected vertexes, if specified vertex exists, or None otherwise.
         """
         if self.graph.get(vertex) != None:
             return self.graph[vertex].keys()

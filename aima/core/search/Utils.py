@@ -1,6 +1,7 @@
 from aima.core.AgentImpl import NoOpAction
 
 __author__ = 'Ivan Mushketik'
+__docformat__ = 'restructuredtext en'
 
 def actions_from_nodes(node_list):
 
