@@ -225,3 +225,20 @@ class LabeledGraph:
         else:
             return None
 
+
+class XYLocation:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def west(self):
+        return XYLocation(self.x - 1, self.y)
+
+    def east(self):
+        return XYLocation(self.x + 1, self.y)
+
+    def north(self):
+        return XYLocation(self.x, self.y - 1)
+
+    def south(self):
+        return XYLocation(self.x, self.y + 1)

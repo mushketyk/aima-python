@@ -45,8 +45,6 @@ class LocalHeuristicFunction(HeuristicFunction):
     def h(self, state):
         return self.max - self.values[state]
 
-
-    
 class TestHillClimbingSearch(unittest.TestCase):
     def test_search_succeed(self):
         values = [4, 3, 5, 6, 10, 3]
