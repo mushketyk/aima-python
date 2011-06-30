@@ -1,7 +1,6 @@
 from aima.core.search import Utils
-from aima.core.search.Framework import EvaluationFunction, PathCostFunction, PrioritySearch, NodeExpander, Search, Node
-from aima.core.search.Utils import actions_from_nodes
-from aima.core.util.Other import Comparator, Infinity
+from aima.core.search.framework import PrioritySearch, EvaluationFunction, PathCostFunction, NodeExpander, Search, Node
+from aima.core.util.other import Comparator, Infinity
 
 __author__ = 'Ivan Mushketik'
 __docformat__ = 'restructuredtext en'

@@ -1,10 +1,49 @@
-from aima.core.search.Framework import Problem, TreeSearch, GraphSearch
-from aima.core.search.Uninformed import DepthLimitedSearch, IterativeDeepeningSearch, DepthFirstSearch, BreadthFirstSearch
-from aima.core.search.tests.Problem import TestActionsFunction, TestResultFunction, TestGoalTest
+from aima.core.search.framework import Problem, TreeSearch, GraphSearch
+from aima.core.search.uninformed import DepthLimitedSearch, IterativeDeepeningSearch, DepthFirstSearch, BreadthFirstSearch
+from aima.core.agent import Action
+from aima.core.search.framework import GoalTest, ResultFunction, ActionFunction
 
 __author__ = 'Ivan Mushketik'
 
 import unittest
+
+# Simple problem for testing
+# Every state is a number. Action function generate 3 stub actions if state number is less then a specified limit
+#
+
+class TestAction(Action):
+    def __init__(self):
+        super().__init__("testAction")
+
+    def is_noop(self):
+        return False
+
+class TestActionsFunction(ActionFunction):
+    """
+        Limit is specified to test failure and cutoffs in searches
+    """
+    def __init__(self, limit=None):
+        self.limit = limit
+
+    def actions(self, state):
+        res = []
+
+        if not self.limit or self.limit > state:
+            for i in range(0, 3):
+                res.append(TestAction())
+
+        return res
+
+class TestResultFunction(ResultFunction):
+    def result(self, state, action):
+        return state + 1
+
+class TestGoalTest(GoalTest):
+    def __init__(self, goal):
+        self.goal = goal
+
+    def is_goal_state(self, state):
+        return state == self.goal
 
 class TestBreathFirstSearch(unittest.TestCase):
     def test_successful_search(self):

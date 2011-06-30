@@ -1,13 +1,51 @@
 import unittest
 import aima
 import aima.core
-from aima.core.Agent import Action
+from aima.core.agent import Action
 import aima.core.search
-from aima.core.search.Framework import *
-from aima.core.search.tests.Problem import TestActionsFunction, TestResultFunction, TestGoalTest
-from aima.core.util.Datastructure import LIFOQueue
+from aima.core.search.framework import *
+from aima.core.util.datastructure import LIFOQueue
+from aima.core.search.framework import ActionFunction, ResultFunction, GoalTest
 
 __author__ = 'Ivan Mushketik'
+
+# Simple problem for testing
+# Every state is a number. Action function generate 3 stub actions if state number is less then a specified limit
+#
+
+class TestAction(Action):
+    def __init__(self):
+        super().__init__("testAction")
+
+    def is_noop(self):
+        return False
+
+class TestActionsFunction(ActionFunction):
+    """
+        Limit is specified to test failure and cutoffs in searches
+    """
+    def __init__(self, limit=None):
+        self.limit = limit
+
+    def actions(self, state):
+        res = []
+
+        if not self.limit or self.limit > state:
+            for i in range(0, 3):
+                res.append(TestAction())
+
+        return res
+
+class TestResultFunction(ResultFunction):
+    def result(self, state, action):
+        return state + 1
+
+class TestGoalTest(GoalTest):
+    def __init__(self, goal):
+        self.goal = goal
+
+    def is_goal_state(self, state):
+        return state == self.goal
 
 class TestNode(unittest.TestCase):
 
