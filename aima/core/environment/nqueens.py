@@ -273,7 +273,7 @@ class QueenAction(Action):
         return other.x == self.x and other.y == self.y and other.type == self.type
 
     def __str__(self):
-        return "QueenAction('" + self.type + "', " + self.x + ", " + self.y + ")"
+        return "QueenAction('" + str(self.type) + "', " + str(self.x) + ", " + str(self.y) + ")"
 
 class NQIActionsFunctions(ActionFunction):
     """
