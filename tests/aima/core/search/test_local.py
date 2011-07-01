@@ -1,5 +1,5 @@
-from aima.core.search.Framework import Problem, ActionFunction, ResultFunction, GoalTest, HeuristicFunction
-from aima.core.search.Local import HillClimbingSearch
+from aima.core.search.framework import Problem, ActionFunction, ResultFunction, GoalTest, HeuristicFunction
+from aima.core.search.local import HillClimbingSearch
 
 __author__ = 'proger'
 

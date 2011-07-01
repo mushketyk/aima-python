@@ -1,4 +1,4 @@
-from aima.core.AgentImpl import NoOpAction
+from aima.core.agent import NoOpAction
 
 __author__ = 'Ivan Mushketik'
 __docformat__ = 'restructuredtext en'

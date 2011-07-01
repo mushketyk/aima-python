@@ -1,12 +1,13 @@
 import math
 from math import sin, cos
-from aima.core.Agent import Action
-from aima.core.search.Framework import StepCostFunction, HeuristicFunction, ResultFunction, GoalTest, ActionFunction
-from aima.core.util.Datastructure import LabeledGraph, Point2D
+from aima.core.agent import Action, PerceptToStateFunction, DynamicPercept
+from aima.core.search.framework import StepCostFunction, HeuristicFunction, ResultFunction, GoalTest, ActionFunction
+from aima.core.util.datastructure import LabeledGraph, Point2D
+from aima.core.agent import Environment
 
 __author__ = 'Ivan Mushketik'
 
-class GeographicalMap:
+class ExtendableMap:
     """
         Map to save information about locations, their coordinates and lengths of paths between them.
     """
@@ -80,6 +81,21 @@ class MoveToAction(Action):
         super().__init__("moveTo")
         self.location = location
 
+    def is_noop(self):
+        return False
+
+    def __eq__(self, other):
+        if not isinstance(other, MoveToAction):
+            return False
+
+        return self.location == other.location
+
+    def __hash__(self):
+        return hash(self.location)
+
+    def __str__(self):
+        return "[MoveTo " + str(self.location) + "]"
+
 
 class MapHeuristicFunction(HeuristicFunction):
     def __init__(self, map, goal):
@@ -113,6 +129,67 @@ class MapActionFunction(ActionFunction):
         return [MoveToAction(location) for location in self.map.get_locations_linked_to(state)]
 
 
+class MapEnvironmentState:
+    def __init__(self):
+        self.agent_location = {}
+        self.agent_travel_distance = {}
+
+    def get_agent_location(self, agent):
+        return self.agent_location[agent]
+
+    def get_agent_travel_distance(self, agent):
+        return self.agent_travel_distance[agent]
+
+    def set_agent_location(self, agent, location):
+        self.agent_location[agent] = location
+
+    def set_agent_travel_distance(self, agent, travel_distance):
+        self.agent_travel_distance[agent] = travel_distance
+
+AGENT_LOCATION = "location"
+PERCEPT_IN = "in"
+
+class MapEnvironment(Environment):
+    def __init__(self, map):
+        super().__init__()
+        self.map = map
+        self.map_environment_state = MapEnvironmentState()
+
+    def add_new_agent(self, agent, start_location):
+        self.map_environment_state.set_agent_location(agent, start_location)
+        self.map_environment_state.set_agent_travel_distance(agent, 0)
+        super().add_agent(agent)
+
+    def get_agent_location(self, agent):
+        return self.map_environment_state.get_agent_location(agent)
+
+    def get_agent_travel_distance(self, agent):
+        return self.map_environment_state.get_agent_travel_distance(agent)
+
+    def current_state(self):
+        return self.map_environment_state
+
+    def execute_action(self, agent, action):
+        if not action.is_noop():
+            curr_location = self.get_agent_location(agent)
+            distance = self.map.get_distance(curr_location, action.location)
+
+            curr_td = self.get_agent_travel_distance(agent)
+            self.map_environment_state.set_agent_travel_distance(agent, curr_td + distance)
+            self.map_environment_state.set_agent_location(agent, action.location)
+
+        return self.map_environment_state
+
+    def get_percept_seen_by(self, agent):
+        location = self.get_agent_location(agent)
+        perception = DynamicPercept()
+        perception.set_percept(PERCEPT_IN, location)
+        return perception
+
+class MapPerceptToStateFunction(PerceptToStateFunction):
+    def get_state(self, percept):
+        return percept.get_attribute(PERCEPT_IN)
+
 # AIMA ed. 2 uses simplified map of Romania as an example of informed and uninformed searches
 class RomaniaCities:
     ORADEA = "Oradea"
@@ -140,7 +217,7 @@ def get_simplified_road_map_of_part_of_romania():
     """
         Get simplefied map of part of romania from AIMA 2 ed.
     """
-    map = GeographicalMap()
+    map = ExtendableMap()
     
     map.add_bidirectional_link(RomaniaCities.ORADEA, RomaniaCities.ZERIND, 71.0)
     map.add_bidirectional_link(RomaniaCities.ORADEA, RomaniaCities.SIBIU, 151.0)

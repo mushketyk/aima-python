@@ -1,4 +1,4 @@
-from aima.core.AgentImpl import NoOpAction
+from aima.core.agent import NoOpAction
 from aima.core.environment.map import RomaniaCities, get_simplified_road_map_of_part_of_romania, MapHeuristicFunction, MapStepCostFunction, MapActionFunction, MapResultFunction, MapGoalTestFunction
 from aima.core.search.framework import TreeSearch, Problem
 from aima.core.search.informed import AStarSearch, RecursiveBestFirstSearch, AStarEvaluationFunction

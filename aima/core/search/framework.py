@@ -1,7 +1,7 @@
 from abc import ABCMeta
-from aima.core.AgentImpl import CutOffIndicatorAction
-from aima.core.search import Utils
-from aima.core.util.Datastructure import PriorityQueue
+from aima.core.agent import CutOffIndicatorAction
+from aima.core.search import utils
+from aima.core.util.datastructure import PriorityQueue
 
 __author__ = 'Ivan Mushketik'
 __docformat__ = 'restructuredtext en'
@@ -275,9 +275,9 @@ class QueueSearch(NodeExpander, Search):
         root = Node(problem.get_initial_state())
         # check root node before adding to a queue
         if self._check_goal_before_adding_to_frontier:
-            if Utils.is_goal_state(problem, root):
+            if utils.is_goal_state(problem, root):
                 self._set_path_cost(root.get_path_cost())
-                return Utils.actions_from_nodes(root.get_path_from_root())
+                return utils.actions_from_nodes(root.get_path_from_root())
 
         self._add_to_frontier(root)
         self._set_new_queue_size()
@@ -288,16 +288,16 @@ class QueueSearch(NodeExpander, Search):
 
             # if state shouldn't be checked before adding it's time to check it now
             if not self._check_goal_before_adding_to_frontier:
-                if Utils.is_goal_state(problem, node_to_expand):
+                if utils.is_goal_state(problem, node_to_expand):
                     self._set_path_cost(node_to_expand.get_path_cost())
-                    return Utils.actions_from_nodes(node_to_expand.get_path_from_root())
+                    return utils.actions_from_nodes(node_to_expand.get_path_from_root())
 
             # Get new nodes, check them and add to a frontier
             for fn in self.get_resulting_nodes_to_add_to_frontier(node_to_expand, problem):
                 if self._check_goal_before_adding_to_frontier:
-                    if Utils.is_goal_state(problem, fn):
+                    if utils.is_goal_state(problem, fn):
                         self._set_path_cost(fn.get_path_cost())
-                        return Utils.actions_from_nodes(fn.get_path_from_root())
+                        return utils.actions_from_nodes(fn.get_path_from_root())
 
                 self._add_to_frontier(fn)
 

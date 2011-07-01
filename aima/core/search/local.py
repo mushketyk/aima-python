@@ -47,10 +47,10 @@ class HillClimbingSearch(NodeExpander):
             
             # if neighbor.VALUE <= current.VALUE then return current.STATE
             if neighbor == None or self._get_value(current_node) <= self._get_value(neighbor):
-                if search.Utils.is_goal_state(problem, current_node):
+                if search.utils.is_goal_state(problem, current_node):
                     self.failure = False
                 self.last_state = current_node.get_state()
-                return search.Utils.actions_from_nodes(current_node.get_path_from_root())
+                return search.utils.actions_from_nodes(current_node.get_path_from_root())
 
             # current <- neighbor
             current_node = neighbor

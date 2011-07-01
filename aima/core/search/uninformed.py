@@ -1,10 +1,7 @@
-
-from aima.core.Agent import Action
-from aima.core.AgentImpl import CutOffIndicatorAction
-from aima.core.search import Utils
-from aima.core.search.Framework import Search, NodeExpander, Node, GraphSearch, PrioritySearch
-from aima.core.util.Datastructure import LIFOQueue, FIFOQueue
-from aima.core.util.Other import Comparator
+from aima.core.search import utils
+from aima.core.search.framework import Search, NodeExpander, Node, GraphSearch, PrioritySearch
+from aima.core.util.datastructure import LIFOQueue, FIFOQueue
+from aima.core.util.other import Comparator
 
 __author__ = 'Ivan Mushketik'
 __docformat__ = 'restructuredtext en'
@@ -148,9 +145,9 @@ class DepthLimitedSearch(NodeExpander, Search):
     def _recursive_dls(self, curNode, problem, limit):
 
         # if problem.GOAL-TEST(node.STATE) then return SOLUTION(node)
-        if Utils.is_goal_state(problem, curNode):
+        if utils.is_goal_state(problem, curNode):
             self.set_path_cost(curNode.get_path_cost())
-            return Utils.actions_from_nodes(curNode.get_path_from_root())
+            return utils.actions_from_nodes(curNode.get_path_from_root())
         elif limit == 0:
             # else if limit = 0 then return cutoff
             return self._cutoff()

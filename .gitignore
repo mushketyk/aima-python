@@ -1,3 +1,6 @@
+.gitignore
+
 *.pyc
+rm_pyc.sh
 aima/**/*.pyc
 .idea

@@ -1,5 +1,5 @@
-from aima.core.util.Datastructure import LIFOQueue, FIFOQueue, PriorityQueue, LabeledGraph
-from aima.core.util.Other import Comparator
+from aima.core.util.datastructure import LIFOQueue, FIFOQueue, PriorityQueue, LabeledGraph
+from aima.core.util.other import Comparator
 
 
 __author__ = 'Ivan Mushketik'

@@ -1,4 +1,4 @@
-from aima.core.search import Utils
+from aima.core.search import utils
 from aima.core.search.framework import PrioritySearch, EvaluationFunction, PathCostFunction, NodeExpander, Search, Node
 from aima.core.util.other import Comparator, Infinity
 
@@ -140,7 +140,7 @@ class RecursiveBestFirstSearch(NodeExpander, Search):
 
         if sr.found_solution():
             goal_node = sr.get_solution()
-            return Utils.actions_from_nodes(goal_node.get_path_from_root())
+            return utils.actions_from_nodes(goal_node.get_path_from_root())
         else:
             return self._failure()
 
@@ -149,7 +149,7 @@ class RecursiveBestFirstSearch(NodeExpander, Search):
         self._set_max_recursive_depth(recursive_depth)
 
         # if problem.GOAL-TEST(node.STATE) then return SOLUTION(node)
-        if Utils.is_goal_state(problem, node):
+        if utils.is_goal_state(problem, node):
             return SearchResult(node, f_limit)
 
         # successors <- []
