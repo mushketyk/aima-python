@@ -1,7 +1,8 @@
 from unittest import TestCase
 from aima.core.agent import EnvironmentView, NoOpAction
 from aima.core.environment.map import ExtendableMap, MapEnvironment, MapActionFunction, MapGoalTestFunction, MapStepCostFunction, MapPerceptToStateFunction, MoveToAction
-from aima.core.search.online import OnlineDFSAgent, OnlineSearchProblem
+from aima.core.search.framework import HeuristicFunction
+from aima.core.search.online import OnlineDFSAgent, OnlineSearchProblem, LRTAStarAgent
 
 __author__ = 'proger'
 
@@ -23,7 +24,7 @@ class EnvironmentViewMock(EnvironmentView):
         self.pos += 1
 
 # Convert list of locations into a list of MoveToAction objects
-def _get_move_to_actions_array(locations):
+def get_move_to_actions_array(locations):
     return [MoveToAction(location) for location in locations] + [NoOpAction()]
 
 
@@ -57,7 +58,7 @@ class OnlineDFSAgentTest(unittest.TestCase):
 
         me.add_new_agent(agent, "A")
         locations = ['C', 'A', 'B', 'A', 'B', 'E', 'B', 'D', 'B', 'D', 'G']
-        expected_actions = _get_move_to_actions_array(locations)
+        expected_actions = get_move_to_actions_array(locations)
         me.add_environment_view(EnvironmentViewMock(expected_actions))
 
         me.step_until_done()
@@ -71,10 +72,64 @@ class OnlineDFSAgentTest(unittest.TestCase):
 
         me.add_new_agent(agent, "A")
         locations = ['B', 'A', 'B', 'A']
-        expected_actions = _get_move_to_actions_array(locations)
+        expected_actions = get_move_to_actions_array(locations)
         me.add_environment_view(EnvironmentViewMock(expected_actions))
 
         me.step_until_done()
+
+
+
+
+class LRTAStarAgentTest(unittest.TestCase):
+
+    class HF(HeuristicFunction):
+        def h(self, state):
+            return 1
+
+    def setUp(self):
+        map = ExtendableMap()
+        map.add_bidirectional_link("A", "B", 4)
+        map.add_bidirectional_link("B", "C", 4)
+        map.add_bidirectional_link("C", "D", 4)
+        map.add_bidirectional_link("D", "E", 4)
+        map.add_bidirectional_link("E", "F", 4)
+        self.map = map
+
+    def test_already_at_goal(self):
+        me = MapEnvironment(self.map)
+        agent = LRTAStarAgent(OnlineSearchProblem(MapActionFunction(self.map), MapGoalTestFunction("A"), MapStepCostFunction(self.map)),
+                              MapPerceptToStateFunction(), self.HF())
+
+        me.add_new_agent(agent, "A")
+        expected_actions = [NoOpAction()]
+        me.add_environment_view(EnvironmentViewMock(expected_actions))
+
+        me.step_until_done()
+
+    def test_normal_search(self):
+        me = MapEnvironment(self.map)
+        agent = LRTAStarAgent(OnlineSearchProblem(MapActionFunction(self.map), MapGoalTestFunction("F"), MapStepCostFunction(self.map)),
+                              MapPerceptToStateFunction(), self.HF())
+
+        me.add_new_agent(agent, "A")
+        locations = ['B', 'A', 'B', 'C', 'B', 'C', 'D', 'C', 'D', 'E', 'D', 'E', 'F']
+        expected_actions = get_move_to_actions_array(locations)
+        me.add_environment_view(EnvironmentViewMock(expected_actions))
+
+        me.step_until_done()
+
+    def test_no_path(self):
+        me = MapEnvironment(self.map)
+        agent = LRTAStarAgent(OnlineSearchProblem(MapActionFunction(self.map), MapGoalTestFunction("G"), MapStepCostFunction(self.map)),
+                              MapPerceptToStateFunction(), self.HF())
+
+        me.add_new_agent(agent, "A")
+        locations = ['B', 'A', 'B', 'C', 'B', 'C', 'D', 'C', 'D', 'E', 'D', 'E', 'F', 'E']
+        expected_actions = get_move_to_actions_array(locations)
+        expected_actions.pop()
+        me.add_environment_view(EnvironmentViewMock(expected_actions))
+
+        me.step(14)
 
 if __name__ == '__main__':
     unittest.main()

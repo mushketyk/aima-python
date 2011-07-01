@@ -72,6 +72,11 @@ class Environment(metaclass=ABCMeta):
         self.environment_objects.discard(environment_object)
 
     def step_once(self):
+        """
+        Make one step for each agent
+
+        :return: None
+        """
         for agent in self.agents:
             if agent.alive:
                 action = agent.execute(self.get_percept_seen_by(agent))
@@ -81,14 +86,30 @@ class Environment(metaclass=ABCMeta):
         self.create_exogenous_change()
 
     def step(self, n):
+        """
+        Make n steps.
+
+        :param n: number of steps
+        :return: None
+        """
         for i in range(n):
             self.step_once()
 
     def step_until_done(self):
+        """
+        Make steps until all agents finished their work.
+
+        :return: None
+        """
         while not self.is_done():
             self.step_once()
 
     def is_done(self):
+        """
+        Check if all agents finished their work.
+
+        :return: True if all agents finished their work, False otherwise
+        """
         for agent in self.agents:
             if agent.alive:
                 return False

@@ -1,5 +1,6 @@
 from aima.core.agent import Agent, NoOpAction
 from aima.core.search.framework import DefaultStepCostFunction
+from aima.core.util.other import Infinity
 
 __author__ = 'Ivan Mushketik'
 __docformat__ = 'restructuredtext en'
@@ -14,6 +15,28 @@ class OnlineSearchProblem:
         return self.goal_test.is_goal_state(state)
 
 
+class LocalSearch(Agent):
+    def __init__(self, problem, pts_function):
+        super().__init__()
+        self._problem = problem
+        self.init()
+        self.pts_function = pts_function
+
+    @property
+    def problem(self):
+        return self._problem
+
+    @problem.setter
+    def problem(self, problem):
+        self._problem = problem
+        self.init()
+
+    def _is_goal_state(self, state):
+        return self._problem.is_goal_state(state)
+
+    def _actions(self, state):
+        return self._problem.action_function.actions(state)
+    
 # Artificial Intelligence A Modern Approach (3rd Edition): Figure 4.21, page 150.
 #
 # function ONLINE-DFS-AGENT(s') returns an action
@@ -37,21 +60,9 @@ class OnlineSearchProblem:
 #
 # Figure 4.21 An online search agent that uses depth-first exploration. The agent is
 # applicable only in state spaces in which every action can be "undone" by some other action.<br>
-class OnlineDFSAgent(Agent):
+class OnlineDFSAgent(LocalSearch):
     def __init__(self, problem, pts_function):
-        super().__init__()
-        self._problem = problem
-        self.init()
-        self.pts_function = pts_function
-
-    @property
-    def problem(self):
-        return self._problem
-
-    @problem.setter
-    def problem(self, problem):
-        self._problem = problem
-        self.init()
+        super().__init__(problem, pts_function)
 
     def init(self):
         self.alive = True
@@ -110,10 +121,95 @@ class OnlineDFSAgent(Agent):
         # return a
         return self.a
 
-    def _is_goal_state(self, state):
-        return self.problem.is_goal_state(state)
+ # Artificial Intelligence A Modern Approach 3rdd Edition): Figure 4.24, page 152.<br>
+ #
+ # function LRTA*-AGENT(s') returns an action
+ #   inputs: s', a percept that identifies the current state
+ #   persistent: result, a table, indexed by state and action, initially empty
+ #               H, a table of cost estimates indexed by state, initially empty
+ #               s, a, the previous state and action, initially null
+ #
+ #   if GOAL-TEST(s') then return stop
+ #   if s' is a new state (not in H) then H[s'] <- h(s')
+ #   if s is not null
+ #     result[s, a] <- s'
+ #     H[s] <-        min LRTA*-COST(s, b, result[s, b], H)
+ #             b (element of) ACTIONS(s)
+ #   a <- an action b in ACTIONS(s') that minimizes LRTA*-COST(s', b, result[s', b], H)
+ #   s <- s'
+ #   return a
+ #
+ # function LRTA*-COST(s, a, s', H) returns a cost estimate
+ #   if s' is undefined then return h(s)
+ #   else return c(s, a, s') + H[s']
+ #
+ #
+ # Figure 4.24 LRTA*-AGENT selects an action according to the value of
+ # neighboring states, which are updated as the agent moves about the state
+ # space.<br>
+ # Note: This algorithm fails to exit if the goal does not exist (e.g. A<->B Goal=X),
+ # this could be an issue with the implementation. Comments are welcome.
 
-    def _actions(self, state):
-        return self.problem.action_function.actions(state)
+class LRTAStarAgent(LocalSearch):
+    def __init__(self, problem, pts_function, heuristic_function):
+        super().__init__(problem, pts_function)
+        self.heuristic_function = heuristic_function
 
+    def init(self):
+        self.alive = True
+        self.result = {}
+        self.H = {}
+        self.s = None
+        self.a = None
 
+    # function LRTA*-AGENT(s') returns an action
+	# inputs: s', a percept that identifies the current state
+    def execute(self, percept):
+        s_prime = self.pts_function.get_state(percept)
+
+        # if GOAL-TEST(s') then return stop
+        if self._is_goal_state(s_prime):
+            self.a = NoOpAction()
+        else:
+            # if s' is a new state (not in H) then H[s'] <- h(s')
+            if s_prime not in self.H.keys():
+                self.H[s_prime] = self.heuristic_function.h(s_prime)
+
+            # if s is not null
+            if self.s != None:
+                # result[s, a] <- s'
+                self.result[(self.s, self.a)] = s_prime
+
+                # H[s] <- min LRTA*-COST(s, b, result[s, b], H)
+				# b (element of) ACTIONS(s)
+                m = min([self._lrta_cost(self.s, b) for b in self._actions(self.s)])
+                self.H[self.s] = m
+
+            # a <- an action b in ACTIONS(s') that minimizes LRTA*-COST(s', b,
+			# result[s', b], H)
+            m = Infinity()
+            self.a = NoOpAction()
+
+            for b in self._actions(s_prime):
+                cost = self._lrta_cost(s_prime, b)
+                if cost < m:
+                    m = cost
+                    self.a = b
+
+        # s <- s'
+        self.s = s_prime
+
+        if self.a.is_noop():
+            self.alive = False
+
+        # return a
+        return self.a
+
+    # function LRTA*-COST(s, a, s', H) returns a cost estimate
+    def _lrta_cost(self, s, action):
+        s_prime = self.result.get((s, action))
+        # if s' is undefined then return h(s)
+        if s_prime == None:
+            return self.heuristic_function.h(s)
+        # else return c(s, a, s') + H[s']
+        return self.problem.step_cost_function.c(s, action, s_prime) + self.H[s_prime]
