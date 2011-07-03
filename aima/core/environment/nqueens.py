@@ -1,5 +1,6 @@
 from aima.core.agent import Action
 from aima.core.search.framework import HeuristicFunction, GoalTest, ActionFunction, ResultFunction
+from aima.core.search.local import StateConverter
 from aima.core.util.datastructure import XYLocation
 
 __author__ = 'Ivan Mushketik'
@@ -243,6 +244,19 @@ class NQueensBoard:
     def __str__(self):
         return self.get_board_pic()
 
+    def __eq__(self, other):
+        if not isinstance(other, NQueensBoard):
+            return False
+
+        if self.size != other.size:
+            return False
+
+        for r in range(self.size):
+            for c in range(self.size):
+                if self.queen_exists_at_square(r, c) != other.queen_exists_at_square(r, c):
+                    return False
+
+        return True
 
 class AttackingPairHeuristic(HeuristicFunction):
     def h(self, board):
@@ -319,3 +333,40 @@ class NQResultFunction(ResultFunction):
             new_board.move_queen_to(action.location)
 
         return new_board
+
+
+class NQueensConverter(StateConverter):
+    def __init__(self, size):
+        self.size = size
+
+    def get_alphabet(self):
+        return [str(i) for i in range(self.size)]
+
+    def get_individual_length(self):
+        return self.size
+
+    def get_string(self, state):
+        string = ""
+
+        for c in range(self.size):
+            found = False
+            for r in range(self.size):
+                if state.queen_exists_at_square(r, c):
+                    string += str(r)
+                    found = True
+                    break
+
+            if not found:
+                raise RuntimeError("Queen not found at column " + str(c))
+
+        return string
+
+    
+    def get_state(self, string):
+        board = NQueensBoard(self.size)
+
+        for c in range(len(string)):
+            r = int(string[c])
+            board.add_queen_at(XYLocation(c, r))
+
+        return board

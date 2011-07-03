@@ -1,4 +1,4 @@
-from aima.core.environment.nqueens import NQueensBoard, NQResultFunction, NQIActionsFunctions, QueenAction, NQCActionsFunction
+from aima.core.environment.nqueens import NQueensBoard, NQResultFunction, NQIActionsFunctions, QueenAction, NQCActionsFunction, NQueensConverter
 from aima.core.util.datastructure import XYLocation
 
 __author__ = 'proger'
@@ -115,6 +115,47 @@ class NQCActionsFunctionTest(unittest.TestCase):
                             QueenAction(QueenAction.MOVE_QUEEN, XYLocation(2, 0)),
                             QueenAction(QueenAction.MOVE_QUEEN, XYLocation(2, 1))]
         self.assertSameElements(expected_actions, actions)
+
+class NQStateConverterTest(unittest.TestCase):
+    def test_get_length(self):
+        length = 5
+        conv = NQueensConverter(length)
+
+        self.assertEqual(length, conv.get_individual_length())
+
+    def test_get_alphabet(self):
+        conv = NQueensConverter(5)
+        expected_alphabet = ['0', '1', '2', '3', '4']
+
+        self.assertSameElements(set(expected_alphabet), set(conv.get_alphabet()))
+
+    def test_get_string(self):
+        board = NQueensBoard(5)
+        board.add_queen_at(XYLocation(0, 2))
+        board.add_queen_at(XYLocation(1, 3))
+        board.add_queen_at(XYLocation(2, 0))
+        board.add_queen_at(XYLocation(3, 4))
+        board.add_queen_at(XYLocation(4, 1))
+
+        expected_string = "23041"
+        conv = NQueensConverter(5)
+
+        self.assertEqual(expected_string, conv.get_string(board))
+
+    def test_get_state(self):
+        string = "23041"
+        conv = NQueensConverter(5)
+
+        expected_board = NQueensBoard(5)
+        expected_board.add_queen_at(XYLocation(0, 2))
+        expected_board.add_queen_at(XYLocation(1, 3))
+        expected_board.add_queen_at(XYLocation(2, 0))
+        expected_board.add_queen_at(XYLocation(3, 4))
+        expected_board.add_queen_at(XYLocation(4, 1))
+
+        self.assertEqual(expected_board, conv.get_state(string))
+
+
 
 if __name__ == '__main__':
     unittest.main()
