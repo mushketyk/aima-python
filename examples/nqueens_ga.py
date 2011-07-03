@@ -7,7 +7,7 @@ __author__ = 'Ivan Mushketik'
 __docformat__ = 'restructuredtext en'
 
 SIZE = 5
-NUMBER_OF_TASKS = 2
+NUMBER_OF_TASKS = 20
 NUMBER_OF_ITERATIONS = 100
 
 def create_random_board():
@@ -20,10 +20,11 @@ def create_random_board():
     return board
 
 def main():
+    succeeded = 0
     for i in range(NUMBER_OF_TASKS):
         print("Iteration number " + str(i))
 
-        boards = [create_random_board() for i in range(5)]
+        boards = [create_random_board() for i in range(50)]
         print("Created boards:")
         for board in boards:
             print(str(board))
@@ -37,10 +38,13 @@ def main():
             print("Search Failed")
         else:
             print("Search Succeeded")
+            succeeded += 1
             
         print("Final state:")
         print(str(best_state))
         print("\n\n")
+
+    print("Succeeded " + str(succeeded) + "/" + str(NUMBER_OF_TASKS))
 
 if __name__ == "__main__":
     main()
