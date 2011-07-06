@@ -1,4 +1,6 @@
 from abc import ABCMeta
+from aima.core.util.functions import select_randomly_from_list
+from aima.core.util.other import Infinity
 
 __author__ = 'Ivan Mushketik'
 __docformat__ = 'restructuredtext en'
@@ -380,11 +382,101 @@ class BacktrackingStrategy(SolutionStrategy):
         return csp.get_domain(var)
 
 
-class AC3Strategy(SolutionStrategy):
+class AC3Strategy:
     pass
 
+
+# Artificial Intelligence A Modern Approach (3rd Ed.): Figure 6.8, Page 221.
+#
+# function MIN-CONFLICTS(csp, max-steps) returns a solution or failure
+#    inputs: csp, a constraint satisfaction problem
+#            max-steps, the number of steps allowed before giving up
+#    current = an initial complete assignment for csp
+#    for i = 1 to max steps do
+#       if current is a solution for csp then return current
+#       var = a randomly chosen conflicted variable from csp.VARIABLES
+#       value = the value v for var that minimizes CONFLICTS(var, v, current, csp)
+#       set var = value in current
+#    return failure
+# 
+# Figure 6.8 The MIN-CONFLICTS algorithm for solving CSPs by local search. The
+# initial state may be chosen randomly or by a greedy assignment process that
+# chooses a minimal-conflict value for each variable in turn. The CONFLICTS
+# function counts the number of constraints violated by a particular value,
+# given the rest of the current assignment.
 class MinConflictsStrategy(SolutionStrategy):
-    pass
+    def __init__(self, max_step):
+        super().__init__()
+        self.max_step = max_step
+
+    # function MIN-CONFLICTS(csp, max-steps) returns a solution or failure
+    def solve(self, csp):
+        # current = an initial complete assignment for csp
+        assignment = self._generate_random_assignment(csp)
+        self._notify_state_changed(csp)
+        # for i = 1 to max steps do
+        for i in range(self.max_step):
+            # if current is a solution for csp then return current
+            if assignment.is_solution(csp):
+                return assignment
+            else:
+                # var = a randomly chosen conflicted variable from csp.VARIABLES
+                vars = self._get_conflicted_variables(assignment, csp)
+                var = select_randomly_from_list(vars)
+                # value = the value v for var that minimizes CONFLICTS(var, v, current, csp)
+                value = self._get_min_conflict_value_for(var, assignment, csp)
+                # set var = value in current
+                assignment.set_assignment(var, value)
+                self._notify_state_changed(csp, assignment)
+
+        # return failure
+        return None
+
+    def _generate_random_assignment(self, csp):
+        assignment = Assignment()
+        for var in csp.get_variables():
+            value = select_randomly_from_list(list(csp.get_domain(var)))
+            assignment.set_assignment(var, value)
+
+        return assignment
+
+    def _get_conflicted_variables(self, assignment, csp):
+        result = set()
+        for constraint in csp.get_constraints():
+            if not constraint.is_satisfied_with(assignment):
+                for var in constraint.get_scope():
+                    result.add(var)
+
+        return list(result)
+
+    def _get_min_conflict_value_for(self, var, assignment, csp):
+        constraints = csp.get_constraints()
+        duplicate_assignment = assignment.copy()
+        min_conflict = Infinity()
+        result_candidates = []
+
+        for value in csp.get_domain(var):
+            duplicate_assignment.set_assignment(var, value)
+            curr_conflict = self._count_conflicts(assignment, constraints)
+            if curr_conflict <= min_conflict:
+                if curr_conflict < min_conflict:
+                    result_candidates = []
+                    min_conflict = curr_conflict
+                result_candidates.append(value)
+
+        if len(result_candidates) != 0:
+            return select_randomly_from_list(result_candidates)
+        else:
+            return None
+
+    def _count_conflicts(self, assignment, constraints):
+        result = 0
+        for constraint in constraints:
+            if not constraint.is_satisfied_with(assignment):
+                result += 1
+
+        return result
+            
 
 class MapCSP(CSP):
     NSW = Variable("NSW")
