@@ -428,7 +428,7 @@ class AC3Strategy:
 class Selection:
     DEFAULT_ORDER = 0
     MRV = 1
-    MRV_DEG = 1
+    MRV_DEG = 2
 
 class Inference:
     NONE = 0
@@ -499,7 +499,35 @@ class ImprovedBacktrackingStrategy(BacktrackingStrategy):
 
 
     def _apply_degree_heuristic(self, vars, assignment, csp):
-        pass
+        """
+        Find variable with the biggest degree
+
+        :param vars list(Variable): list of variables with the least number of assignable values
+        :param assignment (Assignment): current assignment
+        :param csp (CSP): CSP to solve
+        :return: result list of variables with the highest degree. Result variables is subset of vars.
+        """
+
+        result = []
+        max_degree = -1
+
+        for var in vars:
+            neighbors = set()
+            for constraint in csp.get_constraints(var):
+                for neighbor in constraint.get_scope():
+                    # Collect all not assigned variables with common constraints
+                    if not assignment.has_assignment_for(neighbor):
+                        neighbors.add(neighbor)
+
+            # Number of collected variables is a degree of the current variable
+            degree = len(neighbors)
+            if degree >= max_degree:
+                if degree > max_degree:
+                    result = []
+                    max_degree = degree
+                result.append(var)
+
+        return result
 
     def _order_domain_values(self, var, csp, assignment):
         if self.enable_lcv:

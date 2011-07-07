@@ -103,5 +103,36 @@ class BacktrackingSearchTest(unittest.TestCase):
         result = bs.solve(csp)
         self.assertEquals(None, result)
 
+
+class MRVDegreeTest(unittest.TestCase):
+    def test_search(self):
+        bs = ImprovedBacktrackingStrategy(Selection.MRV_DEG)
+        map_csp = MapCSP()
+
+        result = bs.solve(map_csp)
+        self.assertEquals(MapCSP.BLUE, result.get_assignment(MapCSP.WA))
+        self.assertEquals(MapCSP.GREEN, result.get_assignment(MapCSP.NT))
+        self.assertEquals(MapCSP.RED, result.get_assignment(MapCSP.SA))
+        self.assertEquals(MapCSP.BLUE, result.get_assignment(MapCSP.Q))
+        self.assertEquals(MapCSP.GREEN, result.get_assignment(MapCSP.NSW))
+        self.assertEquals(MapCSP.BLUE, result.get_assignment(MapCSP.V))
+        self.assertEquals(MapCSP.RED, result.get_assignment(MapCSP.T))
+
+    def test_search_failed(self):
+        var1 = Variable('var1')
+        var2 = Variable('var2')
+        domain = Domain(['v1'])
+
+        bs = ImprovedBacktrackingStrategy(Selection.MRV_DEG)
+        csp = CSP([var1, var2])
+
+        csp.add_constraint(NotEqualConstraint(var1, var2))
+        csp.set_domain(var1, domain)
+        csp.set_domain(var2, domain)
+
+        result = bs.solve(csp)
+        self.assertEquals(None, result)
+
+        
 if __name__ == '__main__':
     unittest.main()
