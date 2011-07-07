@@ -401,6 +401,14 @@ class BacktrackingStrategy(SolutionStrategy):
         return result
 
     def _select_unassigned_variable(self, assignment, csp):
+        """
+        Select one of unassigned variables. This method is overridden in ImprovedBacktrackingStrategy
+        to implement different variable selection heuristics
+
+        :param assignment (Assignment): current assignment
+        :param csp (CSP): CSP to solve
+        :return (Variable): variable to assign value for
+        """
         for var in csp.get_variables():
             if not assignment.has_assignment_for(var):
                 return var
@@ -428,7 +436,7 @@ class Inference:
     AC3 = 2
 
 class ImprovedBacktrackingStrategy(BacktrackingStrategy):
-    def __init__(self, selection, inference, enable_lcv):
+    def __init__(self, selection, inference=Inference.NONE, enable_lcv=False):
         super().__init__()
         self.selection = selection
         self.inference = inference
@@ -438,7 +446,60 @@ class ImprovedBacktrackingStrategy(BacktrackingStrategy):
         return super().solve(csp)
 
     def _select_unassigned_variable(self, assignment, csp):
-        return super()._select_unassigned_variable(assignment, csp)
+        if self.selection == Selection.MRV:
+            return self._apply_mrv_heuristic(csp, assignment)[0]
+        elif self.selection == Selection.MRV_DEG:
+            vars = self._apply_mrv_heuristic(csp, assignment)
+            return self._apply_degree_heuristic(vars, assignment, csp)[0]
+        else:
+            return super()._select_unassigned_variable(assignment, csp)
+
+    def _apply_mrv_heuristic(self, csp, assignment):
+        """
+        Return list of variables with the least number of assignable variables
+
+        :param csp (CSP): CSP to solve
+        :param assignment (Assignment): current assignment
+        :return list(Variable): list of variales with the least number of assignable variables
+        """
+        result = []
+        mrv = Infinity()
+        copy_assignment = assignment.copy()
+
+        for var in csp.get_variables():
+            if not copy_assignment.has_assignment_for(var):
+                # Get number of left values for this variable
+                num = self._calculate_left_values(var, csp, copy_assignment)
+                if num <= mrv:
+                    if num < mrv:
+                        result = []
+                        mrv = num
+                    result.append(var)
+
+        return result
+
+    def _calculate_left_values(self, var, csp, assignment):
+        num = 0
+
+        for val in csp.get_domain(var):
+            # Set value
+            assignment.set_assignment(var, val)
+            violated = False
+            # Check if any constraint is violated
+            for constraint in csp.get_constraints(var):
+                if not constraint.is_satisfied_with(assignment):
+                    violated = True
+            # If not violated this value can be set
+            if not violated:
+                num += 1
+
+            assignment.remove_assignment(var)
+
+        return num
+
+
+    def _apply_degree_heuristic(self, vars, assignment, csp):
+        pass
 
     def _order_domain_values(self, var, csp, assignment):
         if self.enable_lcv:
@@ -474,7 +535,6 @@ class ImprovedBacktrackingStrategy(BacktrackingStrategy):
 
     def _inference(self, var, assignment, csp):
         return super()._inference(var, assignment, csp)
-
 
 
 

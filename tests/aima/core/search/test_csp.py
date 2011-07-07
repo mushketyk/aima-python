@@ -1,4 +1,4 @@
-from aima.core.search.csp import Variable, Domain, Assignment, BacktrackingStrategy, MapCSP, CSP, NotEqualConstraint
+from aima.core.search.csp import Variable, Domain, Assignment, BacktrackingStrategy, MapCSP, CSP, NotEqualConstraint, Inference, ImprovedBacktrackingStrategy, Selection
 
 __author__ = 'proger'
 
