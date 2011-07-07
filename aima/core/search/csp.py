@@ -307,6 +307,28 @@ class SolutionStrategy:
     def solve(self, csp):
         raise NotImplementedError()
 
+
+class DomainRestoreInfo:
+    def __init__(self):
+        self.saved_domains = {}
+        self.empty_domain_found = False
+
+    def clear(self):
+        self.saved_domains = {}
+
+    def is_empty(self):
+        return len(self.saved_domains.keys()) == 0
+
+    def store_domain_for(self, var, domain):
+        if self.saved_domains.get(var) == None:
+            self.saved_domains[var] = domain
+
+    def restore_domains(self, csp):
+        for var in self.saved_domains.keys():
+            csp.set_domain(var, self.saved_domains[var])
+
+
+        
     
 # Artificial Intelligence A Modern Approach (3rd Ed.): Figure 6.5, Page 215.
 # 
@@ -354,18 +376,25 @@ class BacktrackingStrategy(SolutionStrategy):
             # var = SELECT-UNASSIGNED-VARIABLE(csp)
             var = self._select_unassigned_variable(assignment, csp)
             # for each value in ORDER-DOMAIN-VALUES(var, assignment, csp) do
-            for value in self._order_domain_values(var, csp):
+            for value in self._order_domain_values(var, csp, assignment):
                 # add {var = value} to assignment
                 assignment.set_assignment(var, value)
                 # inferences = INFERENCE(csp, var, value)
                 # if inferences != failure then
                 if assignment.is_consistent(csp.get_constraints(var)):
-                    # result = BACKTRACK(assignment, csp)
-                    result = self._recursive_backtrack_search(csp, assignment)
-                    # if result != failure then
-                    if result != None:
-                        # return result
-                        break
+                    info = self._inference(var, assignment, csp)
+
+                    if not info.is_empty():
+                        self._notify_state_changed(csp)
+                    if not info.empty_domain_found:
+                        # result = BACKTRACK(assignment, csp)
+                        result = self._recursive_backtrack_search(csp, assignment)
+                        # if result != failure then
+                        if result != None:
+                            # return result
+                            break
+
+                    info.restore_domains(csp)
                 # remove {var = value} and inferences from assignment
                 assignment.remove_assignment(var)
 
@@ -378,12 +407,76 @@ class BacktrackingStrategy(SolutionStrategy):
 
         return None
 
-    def _order_domain_values(self, var, csp):
+    def _order_domain_values(self, var, csp, assignment):
         return csp.get_domain(var)
+
+    def _inference(self, var, assignment, csp):
+        return DomainRestoreInfo()
 
 
 class AC3Strategy:
     pass
+
+class Selection:
+    DEFAULT_ORDER = 0
+    MRV = 1
+    MRV_DEG = 1
+
+class Inference:
+    NONE = 0
+    FORWARD_CHECKING = 1
+    AC3 = 2
+
+class ImprovedBacktrackingStrategy(BacktrackingStrategy):
+    def __init__(self, selection, inference, enable_lcv):
+        super().__init__()
+        self.selection = selection
+        self.inference = inference
+        self.enable_lcv = enable_lcv
+
+    def solve(self, csp):
+        return super().solve(csp)
+
+    def _select_unassigned_variable(self, assignment, csp):
+        return super()._select_unassigned_variable(assignment, csp)
+
+    def _order_domain_values(self, var, csp, assignment):
+        if self.enable_lcv:
+            return self._apply_least_constraining_value_heuristic(var, csp, assignment)
+        else:
+            return super()._order_domain_values(var, csp, assignment)
+
+    def _apply_least_constraining_value_heuristic(self, var, csp, assignment):
+        pairs = []
+        for value in csp.get_domain(var):
+            num = self._count_lost_values(var, value, csp, assignment)
+            pairs.append((value, num))
+
+        pairs = sorted(pairs, key = lambda pair: pair[1])
+
+        return [value for (value, num) in pairs]
+
+    def _count_lost_values(self, var, value, csp, assignment):
+        copy_assignment = assignment.copy()
+        assignment.set_assignment(var, value)
+
+        result = 0
+        for constraint in csp.get_constraints():
+            for neighbor in constraint.get_scope():
+                if neighbor != var:
+                    for n_value in csp.get_domain(neighbor):
+                        copy_assignment.set_assignment(neighbor, n_value)
+                        if not constraint.is_satisfied_with(copy_assignment):
+                            result += 1
+                    copy_assignment.remove_assignment(neighbor)
+                
+        return result
+
+    def _inference(self, var, assignment, csp):
+        return super()._inference(var, assignment, csp)
+
+
+
 
 
 # Artificial Intelligence A Modern Approach (3rd Ed.): Figure 6.8, Page 221.
