@@ -1,4 +1,5 @@
 from abc import ABCMeta
+from aima.core.util.datastructure import FIFOQueue
 from aima.core.util.functions import select_randomly_from_list
 from aima.core.util.other import Infinity
 
@@ -32,13 +33,10 @@ class Domain:
     def __init__(self, values):
         """
 
-        :param values: values that can be assigned
+        :param values (list): values that can be assigned
         :return:
         """
-        self.values = []
-
-        for value in values:
-            self.values.append(value)
+        self.values = list(values)
 
     def size(self):
         """
@@ -259,10 +257,11 @@ class CSP:
         return self.domains[var]
 
     def set_domain(self, var, domain):
-        self.domains[var] = domain
+        self.domains[var] = Domain(domain.values)
 
     def remove_value_from_domain(self, var, value):
         self.domains[var].remove(value)
+
 
     def get_constraints(self, var=None):
         if var != None:
@@ -321,7 +320,7 @@ class DomainRestoreInfo:
 
     def store_domain_for(self, var, domain):
         if self.saved_domains.get(var) == None:
-            self.saved_domains[var] = domain
+            self.saved_domains[var] = list(domain)
 
     def restore_domains(self, csp):
         for var in self.saved_domains.keys():
@@ -422,14 +421,102 @@ class BacktrackingStrategy(SolutionStrategy):
         return DomainRestoreInfo()
 
 
+# Artificial Intelligence A Modern Approach (3rd Ed.): Figure 6.3, Page 209.
+# 
+#
+# function AC-3(csp) returns false if an inconsistency is found and true otherwise
+#    inputs: csp, a binary CSP with components (X, D, C)
+#    local variables: queue, a queue of arcs, initially all the arcs in csp
+#    while queue is not empty do
+#       (Xi, Xj) = REMOVE-FIRST(queue)
+#       if REVISE(csp, Xi, Xj) then
+#          if size of Di = 0 then return false
+#             for each Xk in Xi.NEIGHBORS - {Xj} do
+#                add (Xk, Xi) to queue
+#    return true
+# 
+# function REVISE(csp, Xi, Xj) returns true iff we revise the domain of Xi
+#    revised = false
+#    for each x in Di do
+#       if no value y in Dj allows (x ,y) to satisfy the constraint between Xi and Xj then
+#          delete x from Di
+#          revised = true
+#    return revised
+# 
+# Figure 6.3 The arc-consistency algorithm AC-3. After applying AC-3, either
+# every arc is arc-consistent, or some variable has an empty domain, indicating
+# that the CSP cannot be solved. The name "AC-3" was used by the algorithm's
+# inventor (Mackworth, 1977) because it's the third version developed in the
+# paper.
 class AC3Strategy:
-    pass
+    def reduce_domains(self, csp, var=None, value=None, assignment=None):
+        if var == None:
+            result = DomainRestoreInfo()
+            queue = FIFOQueue()
+            for var in csp.get_variables():
+                queue.add(var)
 
+            self._reduce_domains(queue, csp, result, Assignment())
+            return result
+
+        else:
+            result = DomainRestoreInfo()
+            domain = csp.get_domain(var)
+            if  domain.contains(value):
+                if domain.size() > 1:
+                    queue = FIFOQueue()
+                    queue.add(var)
+                    result.store_domain_for(var, domain)
+                    csp.set_domain(var, Domain([value]))
+                    self._reduce_domains(queue,csp, result, assignment)
+            else:
+                result.empty_domain_found = True
+
+            return result
+
+    def _reduce_domains(self, queue, csp, info, assignment):
+        while not queue.is_empty():
+            var = queue.pop()
+
+            for constraint in csp.get_constraints(var):
+                neighbors = set([n for n in constraint.get_scope() if n != var ])
+                for neighbor in neighbors:
+                    if self._revise(neighbor, var, constraint, csp, info, assignment):
+                        if csp.get_domain(neighbor).is_empty():
+                            info.empty_domain_found = True
+                            return
+                        queue.add(neighbor)
+
+    def _revise(self, xi, xj, constraint, csp, info, assignment):
+        revised = False
+        copy_assignment = assignment.copy()
+
+        for i_value in csp.get_domain(xi):
+            copy_assignment.set_assignment(xi, i_value)
+            consistent_extension_found = False
+
+            for j_value in csp.get_domain(xj):
+                copy_assignment.set_assignment(xj, j_value)
+                if constraint.is_satisfied_with(copy_assignment):
+                    consistent_extension_found = True
+                    break
+
+            copy_assignment.remove_assignment(xj)
+
+            if not consistent_extension_found:
+                info.store_domain_for(xi, csp.get_domain(xi))
+                csp.remove_value_from_domain(xi, i_value)
+                revised = True
+
+        return revised
+
+# Possible heuristics of variables selection in ImprovedBacktrackingStrategy
 class Selection:
     DEFAULT_ORDER = 0
     MRV = 1
     MRV_DEG = 2
 
+# Inference strategies in ImprovedBacktrackingStrategy
 class Inference:
     NONE = 0
     FORWARD_CHECKING = 1
@@ -443,6 +530,14 @@ class ImprovedBacktrackingStrategy(BacktrackingStrategy):
         self.enable_lcv = enable_lcv
 
     def solve(self, csp):
+        if self.inference == Inference.AC3:
+            info = AC3Strategy().reduce_domains(csp)
+
+            if not info.is_empty():
+                self._notify_state_changed(csp)
+                if info.empty_domain_found:
+                    return None
+
         return super().solve(csp)
 
     def _select_unassigned_variable(self, assignment, csp):
@@ -562,10 +657,39 @@ class ImprovedBacktrackingStrategy(BacktrackingStrategy):
         return result
 
     def _inference(self, var, assignment, csp):
-        return super()._inference(var, assignment, csp)
+        if self.inference == Inference.FORWARD_CHECKING:
+            return self._do_forward_checking(var, assignment, csp)
+        elif self.inference == Inference.AC3:
+            return AC3Strategy().reduce_domains(csp, var, assignment.get_assignment(var), assignment)
+        else:
+            return super()._inference(var, assignment, csp)
 
 
+    def _do_forward_checking(self, var, assignment, csp):
+        result = DomainRestoreInfo()
 
+        for constraint in csp.get_constraints(var):
+            for neighbor in constraint.get_scope():
+                if not assignment.has_assignment_for(neighbor):
+                    if self._revise(neighbor, constraint, assignment, csp, result):
+                        if csp.get_domain(neighbor).is_empty():
+                            result.empty_domain_found = True
+                            return result
+
+        return result
+
+    def _revise(self, var, constraint, assignment, csp, info):
+        revised = False
+
+        for value in csp.get_domain(var):
+            assignment.set_assignment(var, value)
+            if not constraint.is_satisfied_with(assignment):
+                info.store_domain_for(var, value)
+                revised = True
+
+            assignment.remove_assignment(var)
+
+        return  revised
 
 # Artificial Intelligence A Modern Approach (3rd Ed.): Figure 6.8, Page 221.
 #
