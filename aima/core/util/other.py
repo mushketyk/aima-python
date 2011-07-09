@@ -14,18 +14,34 @@ class Comparator:
         pass
 
 
-class Infinity:
-        def __gt__(self, other):
-            return True
+class PlusInfinity:
+    def __gt__(self, other):
+        return True
 
-        def __ge__(self, other):
-            return True
+    def __ge__(self, other):
+        return True
 
-        def __lt__(self, other):
-            return False
+    def __lt__(self, other):
+        return False
 
-        def __le__(self, other):
-            return False
+    def __le__(self, other):
+        return False
 
-        def __eq__(self, other):
-            return False
+    def __eq__(self, other):
+        return False
+
+class MinusInfinity():
+    def __gt__(self, other):
+        return False
+
+    def __ge__(self, other):
+        return False
+
+    def __lt__(self, other):
+        return True
+
+    def __le__(self, other):
+        return True
+
+    def __eq__(self, other):
+        return False

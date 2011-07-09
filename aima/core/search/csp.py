@@ -1,7 +1,7 @@
 from abc import ABCMeta
 from aima.core.util.datastructure import FIFOQueue
 from aima.core.util.functions import select_randomly_from_list
-from aima.core.util.other import Infinity
+from aima.core.util.other import PlusInfinity
 
 __author__ = 'Ivan Mushketik'
 __docformat__ = 'restructuredtext en'
@@ -558,7 +558,7 @@ class ImprovedBacktrackingStrategy(BacktrackingStrategy):
         :return list(Variable): list of variales with the least number of assignable variables
         """
         result = []
-        mrv = Infinity()
+        mrv = PlusInfinity()
         copy_assignment = assignment.copy()
 
         for var in csp.get_variables():
@@ -757,7 +757,7 @@ class MinConflictsStrategy(SolutionStrategy):
     def _get_min_conflict_value_for(self, var, assignment, csp):
         constraints = csp.get_constraints()
         duplicate_assignment = assignment.copy()
-        min_conflict = Infinity()
+        min_conflict = PlusInfinity()
         result_candidates = []
 
         for value in csp.get_domain(var):

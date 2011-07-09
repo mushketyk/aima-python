@@ -1,6 +1,6 @@
 from aima.core.agent import Agent, NoOpAction
 from aima.core.search.framework import DefaultStepCostFunction
-from aima.core.util.other import Infinity
+from aima.core.util.other import PlusInfinity
 
 __author__ = 'Ivan Mushketik'
 __docformat__ = 'restructuredtext en'
@@ -187,7 +187,7 @@ class LRTAStarAgent(LocalSearch):
 
             # a <- an action b in ACTIONS(s') that minimizes LRTA*-COST(s', b,
 			# result[s', b], H)
-            m = Infinity()
+            m = PlusInfinity()
             self.a = NoOpAction()
 
             for b in self._actions(s_prime):

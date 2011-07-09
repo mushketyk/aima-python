@@ -6,7 +6,7 @@ from urllib.request import randombytes
 from aima.core import search
 from aima.core.search import utils
 from aima.core.search.framework import NodeExpander, Node
-from aima.core.util.other import Infinity
+from aima.core.util.other import PlusInfinity
 
 __author__ = 'Ivan Mushketik'
 __docformat__ = 'restructuredtext en'
@@ -64,7 +64,7 @@ class HillClimbingSearch(NodeExpander):
         :param children: children of current node
         :return: node with the best heuristic estimation
         """
-        lowest_value = Infinity()
+        lowest_value = PlusInfinity()
         node_with_lowest_value = None
 
         for node in children:
@@ -386,7 +386,7 @@ class GeneticAlgorithm:
 
         states = [converter.get_state(individual) for individual in self.population]
 
-        m = Infinity()
+        m = PlusInfinity()
         best_state = None
 
         for state in states:

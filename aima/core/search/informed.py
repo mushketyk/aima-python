@@ -1,6 +1,6 @@
 from aima.core.search import utils
 from aima.core.search.framework import PrioritySearch, EvaluationFunction, PathCostFunction, NodeExpander, Search, Node
-from aima.core.util.other import Comparator, Infinity
+from aima.core.util.other import Comparator, PlusInfinity
 
 __author__ = 'Ivan Mushketik'
 __docformat__ = 'restructuredtext en'
@@ -136,7 +136,7 @@ class RecursiveBestFirstSearch(NodeExpander, Search):
 
         # RBFS(problem, MAKE-NODE(INITIAL-STATE[problem]), infinity)
         root_node = Node(problem.get_initial_state())
-        sr = self._rbfs(problem, root_node, self._evaluation_function.f(root_node), Infinity(), 0)
+        sr = self._rbfs(problem, root_node, self._evaluation_function.f(root_node), PlusInfinity(), 0)
 
         if sr.found_solution():
             goal_node = sr.get_solution()
@@ -159,7 +159,7 @@ class RecursiveBestFirstSearch(NodeExpander, Search):
 
         # if successors is empty then return failure, infinity
         if len(successors) == 0:
-            return SearchResult(None, Infinity())
+            return SearchResult(None, PlusInfinity())
 
         # for each s in successors do
 		# update f with value from previous search, if any
