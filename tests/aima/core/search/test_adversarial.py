@@ -1,4 +1,4 @@
-from aima.core.search.adversarial import MinMaxSearch, SuccessorFunction
+from aima.core.search.adversarial import MinMaxSearch, SuccessorFunction, AlphaBetaSearch
 
 __author__ = 'proger'
 
@@ -47,6 +47,13 @@ class TestTerminalFunction():
 class MinMaxSearchTest(unittest.TestCase):
     def test_get_action(self):
         mms = MinMaxSearch(TestSuccessorFunction(), TestUtilityFunction(), TestTerminalFunction())
+        action = mms.get_action('A')
+
+        self.assertEquals('a1', action)
+
+class MinMaxSearchTest(unittest.TestCase):
+    def test_get_action(self):
+        mms = AlphaBetaSearch(TestSuccessorFunction(), TestUtilityFunction(), TestTerminalFunction())
         action = mms.get_action('A')
 
         self.assertEquals('a1', action)
