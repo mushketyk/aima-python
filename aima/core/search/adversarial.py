@@ -29,9 +29,10 @@ class TerminalStateFunction:
 
 
 class AdversarialSearch:
-    def __init__(self, successor_function, utility_function, terminal_state_function, limit=PlusInfinity()):
+    def __init__(self, max_successor_function, min_successor_function, utility_function, terminal_state_function, limit=PlusInfinity()):
         self.max_level = limit
-        self.successor_function = successor_function
+        self.max_successor_function = max_successor_function
+        self.min_successor_function = min_successor_function
         self.utility_function = utility_function
         self.terminal_state = terminal_state_function
 
@@ -57,14 +58,15 @@ class SuccessorFunction():
 
 
 class GameAgent(Agent):
-    def __init__(self, search, successor_function, utility_function):
+    def __init__(self, search):
         super().__init__()
         self.search = search
-        self.utility_function = utility_function
-        self.successor_function = successor_function
 
     def execute(self, percept):
         action = self.search.get_action(percept)
+
+        if action == None:
+            self.alive = False
         return action
 
 # function Minimax_Decision(state) returns an action
@@ -114,7 +116,7 @@ class MinMaxSearch(AdversarialSearch):
         # v <- -Infinity
         maximum_value = MinusInfinity()
         # for a, s in Successors(state) do
-        for (state, action, probability) in self.successor_function.get_successor_states(state):
+        for (state, action, probability) in self.max_successor_function.get_successor_states(state):
             # v <- Max(v, Min-Value(s))
             value = self._min_value(state, probability, curr_level + 1)
             if value > maximum_value:
@@ -135,7 +137,7 @@ class MinMaxSearch(AdversarialSearch):
         # v <- Infinity
         minimum_value = PlusInfinity()
         # for a, s in Successors(state) do
-        for (state, action, probability) in self.successor_function.get_successor_states(state):
+        for (state, action, probability) in self.min_successor_function.get_successor_states(state):
             # v <- Min(v, Max-Value(s))
             value = self._min_value(state, probability, curr_level + 1)
             if value < minimum_value:
@@ -198,7 +200,7 @@ class AlphaBetaSearch(AdversarialSearch):
         # v <- -Infinity
         maximum_value = MinusInfinity()
         # for a, s in Successors(state) do
-        for (state, action, probability) in self.successor_function.get_successor_states(state):
+        for (state, action, probability) in self.max_successor_function.get_successor_states(state):
             value = self._min_value(state, alpha, beta, probability, curr_level + 1)
             # v <- Max(v, Min-Value(s))
             if value > maximum_value:
@@ -226,7 +228,7 @@ class AlphaBetaSearch(AdversarialSearch):
         # v <- Infinity
         minimum_value = PlusInfinity()
         # for a, s in Successors(state) do
-        for (state, action, probability) in self.successor_function.get_successor_states(state):
+        for (state, action, probability) in self.min_successor_function.get_successor_states(state):
             value = self._max_value(state, alpha, beta, probability, curr_level + 1)
             # v <- Min(v, Max-Value(s))
             if value < minimum_value:

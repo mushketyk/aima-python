@@ -20,13 +20,13 @@ class Agent:
 
 class EnvironmentView(metaclass=ABCMeta):
     def notify(self, msg):
-        raise NotImplementedError()
+        pass
 
     def agent_added(self, agent, resulting_state):
-        raise NotImplementedError()
+        pass
 
     def agent_acted(self, agent, action, resulting_state):
-        raise NotImplementedError()
+        pass
 
 
 class Environment(metaclass=ABCMeta):
@@ -38,15 +38,39 @@ class Environment(metaclass=ABCMeta):
         self.performance_measures = {}
 
     def get_current_state(self):
+        """
+        Get current state of the environment
+
+        :return: current state of the environment
+        """
         raise NotImplementedError()
 
     def execute_action(self, agent, action):
+        """
+        Execute action made by an agent.
+
+        :param agent (Agent): agent that performed an action
+        :param action: action that was performed
+        :return: new environmnet state, after an action was performed
+        """
         raise NotImplementedError()
 
     def get_percept_seen_by(self, agent):
+        """
+        Get percept that is seen by the agent
+
+        :param agent (Agent):
+        :return: percept seen by the specified action
+        """
         raise NotImplementedError()
 
     def create_exogenous_change(self):
+        """
+        In some environments not all changes of state is done by agents. This method make environment changes that
+        isn't done by added agents. Default implementation just does nothing
+
+        :return: state after an exogenous change
+        """
         pass
 
     def get_agents(self):

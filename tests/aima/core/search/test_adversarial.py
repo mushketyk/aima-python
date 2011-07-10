@@ -46,14 +46,14 @@ class TestTerminalFunction():
 
 class MinMaxSearchTest(unittest.TestCase):
     def test_get_action(self):
-        mms = MinMaxSearch(TestSuccessorFunction(), TestUtilityFunction(), TestTerminalFunction())
+        mms = MinMaxSearch(TestSuccessorFunction(), TestSuccessorFunction(), TestUtilityFunction(), TestTerminalFunction())
         action = mms.get_action('A')
 
         self.assertEquals('a1', action)
 
 class MinMaxSearchTest(unittest.TestCase):
     def test_get_action(self):
-        mms = AlphaBetaSearch(TestSuccessorFunction(), TestUtilityFunction(), TestTerminalFunction())
+        mms = AlphaBetaSearch(TestSuccessorFunction(), TestSuccessorFunction(), TestUtilityFunction(), TestTerminalFunction())
         action = mms.get_action('A')
 
         self.assertEquals('a1', action)

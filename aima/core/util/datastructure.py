@@ -246,3 +246,12 @@ class XYLocation:
 
     def south(self):
         return XYLocation(self.x, self.y + 1)
+
+    def __eq__(self, other):
+        if not isinstance(other, XYLocation):
+            return False
+
+        return self.x == other.x and self.y == other.y
+
+    def __str__(self):
+        return "XYLocation(" + str(self.x) + ", " + str(self.y) + ")"
