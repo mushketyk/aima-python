@@ -27,7 +27,7 @@ class PLLexer(Lexer):
             return LeftParToken()
         elif symbol == ')':
             return RightParToken()
-        elif symbol.isidentifier():
+        elif symbol.isalpha():
             self._back()
             return self._identifier()
         else:
@@ -61,10 +61,11 @@ class PLLexer(Lexer):
 
         :return: read identifier
         """
-        identifier = ""
+        identifier = self._get_next_symbol()
+
         while True:
             symbol = self._get_next_symbol()
-            if symbol != None and symbol.isidentifier():
+            if symbol != None and symbol.isalnum():
                 identifier += symbol
             else:
                 if symbol != None:

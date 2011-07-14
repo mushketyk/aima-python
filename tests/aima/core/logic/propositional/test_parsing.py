@@ -19,6 +19,10 @@ class LexerTest(unittest.TestCase):
             [NotToken(), TrueToken(), AndToken(), FalseToken(), BiconditionalToken(), IdentifierToken("Me"), ImplicationToken(),
              LeftParToken(), IdentifierToken("You"), OrToken(), IdentifierToken("They"), RightParToken(), EOLToken()])
 
+    def test_alphanum_identifier(self):
+        self._test_lexer("NOT P11",
+            [NotToken(), IdentifierToken("P11"), EOLToken()])
+
     def _test_lexer(self, input, expected_tokens):
         ppl = PLLexer(input)
 
@@ -73,6 +77,9 @@ class ParserTest(unittest.TestCase):
                                                                            SymbolTerm("B")),
                                                            ImplicationTerm(SymbolTerm("B"),
                                                                            SymbolTerm("A"))))
+
+    def test_not_parenth(self):
+        self._test_parser("(NOT A)", NotTerm(SymbolTerm("A")))
 
     def _test_parser(self, str, expected_term):
         lexer = PLLexer(str)

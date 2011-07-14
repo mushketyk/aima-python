@@ -167,6 +167,9 @@ class Term:
         self.type = type
         self.children = list(children)
 
+    def accept_visitor(self, visitor):
+        raise NotImplementedError()
+
     def __eq__(self, other):
         if not isinstance(other, Term):
             return False
@@ -186,38 +189,51 @@ class Term:
 
         return True
 
+    def __hash__(self):
+        return super().__hash__()
+
     def __str__(self):
         result = "(" + get_token_type_name(self.type)
 
         l = len(self.children)
         for i in range(l):
-            result += str(child)
+            result += str(self.children[i])
 
             if i != l - 1:
-                result += ",\n"
+                result += ","
 
         result += ")"
 
         return result
 
 
-class NotTerm(Term):
+class FunctionTerm(Term):
+    def __init__(self, type, children):
+        super().__init__(type, children)
+
+    def accept_visitor(self, visitor):
+        for child in self.children:
+            child.accept_visitor(visitor)
+            
+        visitor.visit_function_term(self)
+
+class NotTerm(FunctionTerm):
     def __init__(self, term):
         super().__init__(TokenTypes.NOT, [term])
 
-class AndTerm(Term):
+class AndTerm(FunctionTerm):
     def __init__(self, left_term, right_term):
         super().__init__(TokenTypes.AND, [left_term, right_term])
 
-class OrTerm(Term):
+class OrTerm(FunctionTerm):
     def __init__(self, left_term, right_term):
         super().__init__(TokenTypes.OR, [left_term, right_term])
 
-class ImplicationTerm(Term):
+class ImplicationTerm(FunctionTerm):
     def __init__(self, left_term, right_term):
         super().__init__(TokenTypes.IMPLICATION, [left_term, right_term])
 
-class BiconditionalTerm(Term):
+class BiconditionalTerm(FunctionTerm):
     def __init__(self, left_term, right_term):
         super().__init__(TokenTypes.BICONDITIONAL, [left_term, right_term])
 
@@ -225,20 +241,32 @@ class TrueTerm(Term):
     def __init__(self):
         super().__init__(TokenTypes.TRUE, [])
 
+    def accept_visitor(self, visitor):
+        visitor.visit_true_term(self)
+
 class FalseTerm(Term):
     def __init__(self):
         super().__init__(TokenTypes.FALSE, [])
+
+    def accept_visitor(self, visitor):
+        visitor.visit_false_term(self)
 
 class SymbolTerm(Term):
     def __init__(self, name):
         super().__init__(TokenTypes.IDENTIFIER, [])
         self.name = name
 
+    def accept_visitor(self, visitor):
+        visitor.visit_symbol_term(self)
+
     def __eq__(self, other):
         if not isinstance(other, SymbolTerm):
             return False
 
         return self.name == other.name
+
+    def __hash__(self):
+        return super().__hash__()
 
     def __str__(self):
         return "(SymbolTerm " + self.name + ")"
@@ -298,3 +326,17 @@ class ParserError(Exception):
     def __str__(self):
         return "ParserError(" + self.msg + ")"
 
+
+class TermVisitor:
+
+    def visit_true_term(self, term):
+        pass
+
+    def visit_false_term(self, term):
+        pass
+
+    def visit_symbol_term(self, term):
+        pass
+
+    def visit_function_term(self, term):
+        pass
