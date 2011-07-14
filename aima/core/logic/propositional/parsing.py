@@ -4,8 +4,10 @@ __author__ = 'Ivan Mushketik'
 __docformat__ = 'restructuredtext en'
 
 
-class PropositionalLogicLexer(Lexer):
-
+class PLLexer(Lexer):
+    """
+    Lexical analyser for propositional logic
+    """
     def __init__(self, input):
         super().__init__(input)
         self.tokens = {"NOT" : NotToken, "AND" : AndToken, "OR" : OrToken, "TRUE" : TrueToken, "FALSE" : FalseToken}
@@ -78,6 +80,62 @@ class PropositionalLogicLexer(Lexer):
             return special_id_constructor()
         else:
             return IdentifierToken(identifier)
+
+
+class PLParser(Parser):
+    """
+    Parser for propositional logical
+    """
+    def __init__(self):
+        super().__init__()
+        self._operator_ctors = {TokenTypes.AND : AndTerm, TokenTypes.OR : OrTerm, TokenTypes.BICONDITIONAL : BiconditionalTerm,
+                                TokenTypes.IMPLICATION : ImplicationTerm}
+
+    def _implementation_specific_parsing(self):
+        return self._parse_sentence()
+
+    def _parse_sentence(self):
+        token = self._get_token()
+
+        sentence = None
+        if token.type == TokenTypes.LEFT_PAR:
+            sentence = self._parse_sentence()
+            self._match(TokenTypes.RIGHT_PAR)
+
+        elif token.type == TokenTypes.NOT:
+            sentence = self._parse_not_sentence()
+        elif token.type == TokenTypes.FALSE:
+            sentence = FalseTerm()
+        elif token.type == TokenTypes.TRUE:
+            sentence = TrueTerm()
+        elif token.type == TokenTypes.IDENTIFIER:
+            sentence = SymbolTerm(token.str)
+        else:
+            raise ParserError("Unexpected token")
+
+        self.lexer.mark()
+        token = self._get_token()
+
+        if self._is_operator(token.type):
+            sentence2 = self._parse_sentence()
+            operator_ctor = self._operator_ctors[token.type]
+            return operator_ctor(sentence, sentence2)
+        else:
+            self.lexer.rollback()
+            return sentence
+        
+
+    def _parse_not_sentence(self):
+        sentence = self._parse_sentence()
+        return NotTerm(sentence)
+
+    def _is_operator(self, type):
+        return type in {TokenTypes.OR, TokenTypes.AND, TokenTypes.BICONDITIONAL, TokenTypes.IMPLICATION}
+
+
+
+
+
 
 
 

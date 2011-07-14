@@ -28,6 +28,23 @@ class TokenTypes:
     FALSE = 9
     IDENTIFIER = 10
 
+token_type_names = {
+    TokenTypes.EOL : "EOL",
+    TokenTypes.BICONDITIONAL : "BICONDITIONAL",
+    TokenTypes.IMPLICATION : "IMPLICATION",
+    TokenTypes.NOT : "NOT",
+    TokenTypes.OR : "OR",
+    TokenTypes.AND : "AND",
+    TokenTypes.LEFT_PAR : "LEFT_PAR",
+    TokenTypes.RIGHT_PAR : "RIGHT PAR",
+    TokenTypes.TRUE : "TRUE",
+    TokenTypes.FALSE : "FALSE",
+    TokenTypes.IDENTIFIER : "IDENTIFIER",
+}
+
+def get_token_type_name(token_type):
+    return token_type_names[token_type]
+
 class EOLToken(Token):
     def __init__(self):
         super().__init__(TokenTypes.EOL, "")
@@ -145,28 +162,123 @@ class Lexer:
         if self.curr_pos != 0:
             self.curr_pos -= 1
 
-class ParseTreeElement:
-    pass
+class Term:
+    def __init__(self, type, children):
+        self.type = type
+        self.children = list(children)
 
-class ParserElement:
+    def __eq__(self, other):
+        if not isinstance(other, Term):
+            return False
+
+        if self.type != other.type:
+            return False
+
+        l1 = len(self.children)
+        l2 = len(other.children)
+
+        if l1 != l2:
+            return False
+
+        for i in range(l1):
+            if self.children != other.children:
+                return False
+
+        return True
+
+    def __str__(self):
+        result = "(" + get_token_type_name(self.type)
+
+        l = len(self.children)
+        for i in range(l):
+            result += str(child)
+
+            if i != l - 1:
+                result += ",\n"
+
+        result += ")"
+
+        return result
+
+
+class NotTerm(Term):
+    def __init__(self, term):
+        super().__init__(TokenTypes.NOT, [term])
+
+class AndTerm(Term):
+    def __init__(self, left_term, right_term):
+        super().__init__(TokenTypes.AND, [left_term, right_term])
+
+class OrTerm(Term):
+    def __init__(self, left_term, right_term):
+        super().__init__(TokenTypes.OR, [left_term, right_term])
+
+class ImplicationTerm(Term):
+    def __init__(self, left_term, right_term):
+        super().__init__(TokenTypes.IMPLICATION, [left_term, right_term])
+
+class BiconditionalTerm(Term):
+    def __init__(self, left_term, right_term):
+        super().__init__(TokenTypes.BICONDITIONAL, [left_term, right_term])
+
+class TrueTerm(Term):
+    def __init__(self):
+        super().__init__(TokenTypes.TRUE, [])
+
+class FalseTerm(Term):
+    def __init__(self):
+        super().__init__(TokenTypes.FALSE, [])
+
+class SymbolTerm(Term):
+    def __init__(self, name):
+        super().__init__(TokenTypes.IDENTIFIER, [])
+        self.name = name
+
+    def __eq__(self, other):
+        if not isinstance(other, SymbolTerm):
+            return False
+
+        return self.name == other.name
+
+    def __str__(self):
+        return "(SymbolTerm " + self.name + ")"
+
+
+class Parser:
+    """
+    Basic class for creating parsers
+    """
     def parse(self, lexer):
+        self.lexer = lexer
+        return self._implementation_specific_parsing()
+
+    def _implementation_specific_parsing(self):
+        """
+        Method that should be implemented to parse
+
+        :return (Term): root term of the syntactics tree
+        """
         raise NotImplementedError()
 
-class OR(ParserElement):
-    def __init__(self, *parsers):
-        self.parsers = parsers
+    def _match(self, token_type):
+        """
+        Check if next token is equal to the expected token type
 
-    def parse(self, lexer):
-        lexer.mark()
+        :param token_type: expected token type
+        :raise: ParserError if unexpected token read
+        """
+        token = self._get_token()
+        if token.type != token_type:
+            raise ParserError("Unexpected token type")
 
-        for parser in self.parsers:
-            result = parser.parse(lexer)
+    def _get_token(self):
+        """
+        Get next token from lexical analyser.
 
-            if result != None:
-                return result
-            lexer.rollback()
+        :return: next token from lexical analyser
+        """
+        return self.lexer.get_next_token()
 
-        return None
 
 
 class LexerError(Exception):
@@ -185,3 +297,4 @@ class ParserError(Exception):
 
     def __str__(self):
         return "ParserError(" + self.msg + ")"
+
