@@ -1,5 +1,6 @@
 from aima.core.logic.common import AndTerm, SymbolTerm, BiconditionalTerm, ImplicationTerm, NotTerm, OrTerm
 from aima.core.logic.propositional.algorithms import KnowledgeBase, TTEntails
+from aima.core.logic.propositional.visitors import CNFClauseGatherer
 
 __author__ = 'proger'
 
@@ -95,6 +96,7 @@ class TTEntailsTest(unittest.TestCase):
 
         self.assertTrue(tte.tt_entails(kb, "NOT P12"))
         self.assertFalse((tte.tt_entails(kb, "P22")))
+
 
 
 if __name__ == '__main__':

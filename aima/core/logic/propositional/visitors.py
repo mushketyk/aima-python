@@ -77,7 +77,7 @@ class Model(TermVisitor):
 
             self.calculation_result[term] =  ((not v1) or v2) and ((not v2) or v1)
 
-class CNFTransformer(TermVisitor):
+class CNFTransformer:
     """
     Transformer that transformer any expression in propositional logic into CNF expression
     """
@@ -160,6 +160,33 @@ class CNFTransformer(TermVisitor):
         # Biconditional term transformation; A <=> B == (A => B) AND (B => A)
         return AndTerm(self.transform(first_implication), self.transform(second_implication))
 
+
+class CNFClauseGatherer(TermVisitor):
+    """
+    Select set of expressions separated by AND in CNF
+    """
+    def __init__(self):
+        self.clauses = set()
+
+    def collect(self, root_term):
+        # If we have expressions like A OR B, D, NOT C; just return the root term
+        if root_term.type != TokenTypes.AND:
+            return {root_term}
+        else:
+            self.clauses = set()
+            root_term.accept_visitor(self)
+
+            return self.clauses
+
+    def visit_function_term(self, term):
+        if term.type == TokenTypes.AND:
+            left_child = term.children[0]
+            right_child = term.children[1]
+
+            if left_child.type != TokenTypes.AND:
+                self.clauses.add(left_child)
+            if right_child.type != TokenTypes.AND:
+                self.clauses.add(right_child)
 
 
 

@@ -273,7 +273,7 @@ class SymbolTerm(Term):
         return self.name == other.name
 
     def __hash__(self):
-        return super().__hash__()
+        return hash(self.name)
 
     def __str__(self):
         return "(SymbolTerm " + self.name + ")"

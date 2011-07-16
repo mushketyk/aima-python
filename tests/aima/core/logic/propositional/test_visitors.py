@@ -1,6 +1,6 @@
 from aima.core.logic.common import Parser, SymbolTerm, AndTerm, OrTerm, NotTerm
 from aima.core.logic.propositional.parsing import PLParser, PLLexer
-from aima.core.logic.propositional.visitors import SymbolsCollector, Model, CNFTransformer
+from aima.core.logic.propositional.visitors import SymbolsCollector, Model, CNFTransformer, CNFClauseGatherer
 
 __author__ = 'proger'
 
@@ -205,6 +205,59 @@ class CNFTransformerTest(unittest.TestCase):
 
         result = CNFTransformer().transform(sentence)
         self.assertEqual(expected_result, result)
+
+class CNFClauseGathererTest(unittest.TestCase):
+    def test_symbol(self):
+        self._test_gatherer_str("A", [SymbolTerm("A")])
+
+    def test_not_sentence(self):
+        self._test_gatherer_str("NOT A", [NotTerm(SymbolTerm("A"))])
+
+    def test_simple_and_clause(self):
+        self._test_gatherer_str("A AND B", [SymbolTerm("A"), SymbolTerm("B")])
+
+    def test_simple_and_multi_clause(self):
+        self._test_gatherer_str("(A AND B) AND C", [SymbolTerm("A"), SymbolTerm("B"), SymbolTerm("C")])
+
+    def test_simple_and_multi_clause2(self):
+        self._test_gatherer_str("D AND (A AND B) AND C", [SymbolTerm("A"), SymbolTerm("B"), SymbolTerm("C"), SymbolTerm("D")])
+
+    def test_aima_example(self):
+        parser = PLParser()
+        sentence = parser.parse("B11 <=> (P12 OR P21)")
+
+        transformer = CNFTransformer()
+        cnf = transformer.transform(sentence)
+
+        self._test_gatherere(cnf, [OrTerm(NotTerm(SymbolTerm("B11")),
+                                                   OrTerm(SymbolTerm("P12"),
+                                                          SymbolTerm("P21"))),
+                                    OrTerm(NotTerm(SymbolTerm("P12")),
+                                                   SymbolTerm("B11")),
+                                    OrTerm(NotTerm(SymbolTerm("P21")),
+                                                   SymbolTerm("B11"))])
+
+
+    def _test_gatherer_str(self, expression, expected_clauses):
+        parser = PLParser()
+        sentence = parser.parse(expression)
+
+        self._test_gatherer(sentence, expected_clauses)
+
+    def _test_gatherer(self, sentence, expected_clauses):
+        ccg = CNFClauseGatherer()
+        result = ccg.collect(sentence)
+
+        self.assertEqual(len(expected_clauses), len(result))
+
+        for ec in expected_clauses:
+            found = False
+            for rc in result:
+                if rc == ec:
+                    found = True
+            self.assertTrue(found, "Element " + str(ec) + " wasn't found")
+
+
 
 if __name__ == '__main__':
     unittest.main()
