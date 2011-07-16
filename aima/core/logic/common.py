@@ -170,6 +170,9 @@ class Term:
     def accept_visitor(self, visitor):
         raise NotImplementedError()
 
+    def is_function(self):
+        return False
+
     def __eq__(self, other):
         if not isinstance(other, Term):
             return False
@@ -193,7 +196,7 @@ class Term:
         return super().__hash__()
 
     def __str__(self):
-        result = "(" + get_token_type_name(self.type)
+        result = "(" + get_token_type_name(self.type) + " "
 
         l = len(self.children)
         for i in range(l):
@@ -210,6 +213,9 @@ class Term:
 class FunctionTerm(Term):
     def __init__(self, type, children):
         super().__init__(type, children)
+
+    def is_function(self):
+        return True
 
     def accept_visitor(self, visitor):
         for child in self.children:
@@ -251,6 +257,7 @@ class FalseTerm(Term):
     def accept_visitor(self, visitor):
         visitor.visit_false_term(self)
 
+
 class SymbolTerm(Term):
     def __init__(self, name):
         super().__init__(TokenTypes.IDENTIFIER, [])
@@ -276,16 +283,7 @@ class Parser:
     """
     Basic class for creating parsers
     """
-    def parse(self, lexer):
-        self.lexer = lexer
-        return self._implementation_specific_parsing()
-
-    def _implementation_specific_parsing(self):
-        """
-        Method that should be implemented to parse
-
-        :return (Term): root term of the syntactics tree
-        """
+    def parse(self, str):
         raise NotImplementedError()
 
     def _match(self, token_type):

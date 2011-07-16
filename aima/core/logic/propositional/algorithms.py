@@ -20,7 +20,7 @@ class KnowledgeBase:
         :param str (str): Propositional logic expression
         :return: None
         """
-        sentence = self.parser.parse(PLLexer(str))
+        sentence = self.parser.parse(str)
         self.tell(sentence)
 
     def tell(self, term):
@@ -87,7 +87,7 @@ class KnowledgeBase:
 #           alpha, the query, a sentence in propositional logic
 #
 #   symbols <- a list of proposition symbols in KB and alpha
-#   return TT-Check-All(KB, alpha, sumbols, [])
+#   return TT-Check-All(KB, alpha, symbols, [])
 #
 # function TT-Check-All(KB, symbols, model) returns true or false
 #   if Empty?(symbols) then
@@ -102,7 +102,7 @@ class TTEntails:
     # function TT-Entails?(KB, alpha) returns true or false
     def tt_entails(self, knowledge_base, alpha):
         kb_sentence = knowledge_base.as_sentence()
-        query_sentence = PLParser().parse(PLLexer(alpha))
+        query_sentence = PLParser().parse(alpha)
 
         collector = SymbolsCollector()
         kb_symbols = collector.collect_symbols(kb_sentence)
@@ -110,7 +110,7 @@ class TTEntails:
 
         # symbols <- a list of proposition symbols in KB and alpha
         symbols_list = list(kb_symbols.union(query_symbols))
-        # return TT-Check-All(KB, alpha, sumbols, [])
+        # return TT-Check-All(KB, alpha, symbols, [])
         return self.tt_check_all(kb_sentence, query_sentence, symbols_list, Model())
 
     # function TT-Check-All(KB, symbols, model) returns true or false
@@ -128,12 +128,12 @@ class TTEntails:
             copy_list = list(symbols_list)
             symbol = copy_list.pop()
 
-            trueModel = model.extend(symbol, True)
-            falseModel = model.extend(symbol, False)
+            true_model = model.extend(symbol, True)
+            false_model = model.extend(symbol, False)
 
             # return TT-Check-All(KB, alpha, rest, Extend(P, true, model) and
             # TT-Check-All(KB, alpha, rest, Extend(P, false, model)
-            return self.tt_check_all(kb_sentence, query_sentence, copy_list, trueModel) and \
-                   self.tt_check_all(kb_sentence, query_sentence, copy_list, falseModel)
+            return self.tt_check_all(kb_sentence, query_sentence, copy_list, true_model) and \
+                   self.tt_check_all(kb_sentence, query_sentence, copy_list, false_model)
 
 

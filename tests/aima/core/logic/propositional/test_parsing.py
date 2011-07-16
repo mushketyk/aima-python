@@ -82,9 +82,8 @@ class ParserTest(unittest.TestCase):
         self._test_parser("(NOT A)", NotTerm(SymbolTerm("A")))
 
     def _test_parser(self, str, expected_term):
-        lexer = PLLexer(str)
         parser = PLParser()
-        result_term = parser.parse(lexer)
+        result_term = parser.parse(str)
 
         self.assertEqual(expected_term, result_term)
 

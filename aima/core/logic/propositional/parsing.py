@@ -92,7 +92,8 @@ class PLParser(Parser):
         self._operator_ctors = {TokenTypes.AND : AndTerm, TokenTypes.OR : OrTerm, TokenTypes.BICONDITIONAL : BiconditionalTerm,
                                 TokenTypes.IMPLICATION : ImplicationTerm}
 
-    def _implementation_specific_parsing(self):
+    def parse(self, str):
+        self.lexer = PLLexer(str)
         return self._parse_sentence()
 
     def _parse_sentence(self):
