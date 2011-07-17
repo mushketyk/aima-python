@@ -40,7 +40,7 @@ class Model(TermVisitor):
         self.calculation_result = {}
         root_term.accept_visitor(self)
 
-        return self.calculation_result[root_term]
+        return self.calculation_result.get(root_term) == True
 
     def visit_false_term(self, term):
         self.calculation_result[term] = False
@@ -49,33 +49,33 @@ class Model(TermVisitor):
         self.calculation_result[term] = True
 
     def visit_symbol_term(self, term):
-        self.calculation_result[term] = self.symbols_table[term.name]
+        self.calculation_result[term] = self.symbols_table.get(term.name)
 
     def visit_function_term(self, term):
-        if term.type == TokenTypes.NOT:
+        v1 = self.calculation_result[term.children[0]]
+        if v1 == None:
+            self.calculation_result[term] = None
+        elif term.type == TokenTypes.NOT:
             self.calculation_result[term] = not self.calculation_result[term.children[0]]
-        elif term.type == TokenTypes.AND:
-            v1 = self.calculation_result[term.children[0]]
+        else:
+
             v2 = self.calculation_result[term.children[1]]
+            if v2 == None:
+                self.calculation_result[term] = None
+            if term.type == TokenTypes.AND:
+                self.calculation_result[term] = v1 and v2
 
-            self.calculation_result[term] = v1 and v2
-        elif term.type == TokenTypes.OR:
-            v1 = self.calculation_result[term.children[0]]
-            v2 = self.calculation_result[term.children[1]]
+            elif term.type == TokenTypes.OR:
+                self.calculation_result[term] = v1 or v2
 
-            self.calculation_result[term] = v1 or v2
+            elif term.type == TokenTypes.IMPLICATION:
+                self.calculation_result[term] =  (not v1) or v2
 
-        elif term.type == TokenTypes.IMPLICATION:
-            v1 = self.calculation_result[term.children[0]]
-            v2 = self.calculation_result[term.children[1]]
+            elif term.type == TokenTypes.BICONDITIONAL:
+                self.calculation_result[term] =  ((not v1) or v2) and ((not v2) or v1)
 
-            self.calculation_result[term] =  (not v1) or v2
-
-        elif term.type == TokenTypes.BICONDITIONAL:
-            v1 = self.calculation_result[term.children[0]]
-            v2 = self.calculation_result[term.children[1]]
-
-            self.calculation_result[term] =  ((not v1) or v2) and ((not v2) or v1)
+    def get_assigned_symbols(self):
+        return self.symbols_table.keys()
 
 class CNFTransformer:
     """

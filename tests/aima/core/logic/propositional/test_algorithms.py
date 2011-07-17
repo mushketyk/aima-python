@@ -1,7 +1,7 @@
 from aima.core.logic.common import AndTerm, SymbolTerm, BiconditionalTerm, ImplicationTerm, NotTerm, OrTerm
-from aima.core.logic.propositional.algorithms import KnowledgeBase, TTEntails, PLResolution, EmptyClause, PLFCEntails
+from aima.core.logic.propositional.algorithms import KnowledgeBase, TTEntails, PLResolution, EmptyClause, PLFCEntails, DPLL
 from aima.core.logic.propositional.parsing import PLParser
-from aima.core.logic.propositional.visitors import CNFClauseGatherer
+from aima.core.logic.propositional.visitors import CNFClauseGatherer, Model
 
 __author__ = 'proger'
 
@@ -162,6 +162,41 @@ class PLFCEntailsTest(unittest.TestCase):
         result = plfc_entails.plfc_entails(kb, question_sentence)
 
         self.assertEquals(expected_result, result)
+
+class DPLLTest(unittest.TestCase):
+    def test_dpll_when_all_clauses_true(self):
+        model = Model()
+        model = model.extend("A", True).extend("B", True)
+
+        sentence = PLParser().parse("(A OR B) AND (A OR B)")
+        result = DPLL().dpll_satisfiable(sentence, model)
+        self.assertTrue(result)
+
+    def test_dpll_return_false_with_one_false_in_model(self):
+        model = Model().extend("A", True).extend("B", False)
+
+        sentence = PLParser().parse("(A OR B) AND (A => B)")
+        result = DPLL().dpll_satisfiable(sentence, model)
+        self.assertFalse(result)
+
+    def test_dpll_succeeds_with_a_and_not_a(self):
+        sentence = PLParser().parse("A AND (NOT A)")
+        result = DPLL().dpll_satisfiable(sentence)
+        self.assertFalse(result)
+
+    def test_dpll1(self):
+        kb = KnowledgeBase()
+        kb.tell_str("(B12 <=> (P11 OR (P13 OR (P22 OR P02))))")
+        kb.tell_str("(B21 <=> (P20 OR (P22 OR (P31 OR P11))))")
+        kb.tell_str("(B01 <=> (P00 OR (P02 OR P11)))")
+        kb.tell_str("(B10 <=> (P11 OR (P20 OR P00)))")
+        kb.tell_str("(NOT B21)")
+        kb.tell_str("(NOT B12)")
+        kb.tell_str("(B10)")
+        kb.tell_str("(B01)")
+
+        kb.ask_with_dpll(SymbolTerm("P00"))
+        kb.ask_with_dpll(NotTerm(SymbolTerm("P00")))
 
 if __name__ == '__main__':
     unittest.main()

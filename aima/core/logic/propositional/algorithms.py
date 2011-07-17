@@ -86,6 +86,9 @@ class KnowledgeBase:
 
         return create_symbols_connection(AndTerm, self.sentences, None)
 
+    def ask_with_dpll(self, question):
+        return not DPLL().dpll_satisfiable(AndTerm(self.as_sentence(), question))
+
 # function TT-Entails?(KB, alpha) returns true or false
 #   inputs: KB, the knowledge base, a sentence in propositional logic
 #           alpha, the query, a sentence in propositional logic
@@ -341,7 +344,128 @@ class PLFCEntails:
 
         return horn_clauses
 
+# function DPLL-Satisfiable?(s) returns true or fale
+#   inputs: s, a sentence in propositional logic
+#
+#   clauses <- the set of clauses in the CNF representation of s
+#   symbols <- a list of the proposition symbols in s
+#   return DPLL(clauses, symbols, [])
+#
+# function DPLL(clauses, symbols, model) returns true or false
+#   if every clause in clauses is true in model then return true
+#   if some clause in clauses is false in model then return false
+#   P, value <- Find-Pure-Symbol(symbols, clauses, model)
+#   if P is not null then return DPLL(clauses, symbols - P, Extend(P, value, model))
+#   P, value <- Find-Unit-Clause(clauses, model)
+#   if P is not null then return DPLL(clauses, symbols -P, Extend(P, value, model))
+#   P <- First(symbols); rest <- Rest(symbols)
+#   return DPLL(clauses, rest, Extend(P, true, model)) or
+#          DPLL(clauses, rest, Extend(P, false, model))
+class DPLL:
+    class SymbolValuePair:
+        def __init__(self, symbol=None, value=None):
+            self.symbol = symbol
+            self.value = value
 
+        def is_none(self):
+            return self.symbol == None or self.value == None
+
+    # function DPLL-Satisfiable?(s) returns true or fale
+    #   inputs: s, a sentence in propositional logic
+    def dpll_satisfiable(self, sentence, model=Model()):
+        cnf_sentence = CNFTransformer().transform(sentence)
+        # clauses <- the set of clauses in the CNF representation of s
+        clauses = CNFClauseGatherer().collect(cnf_sentence)
+        # symbols <- a list of the proposition symbols in s
+        symbols = SymbolsCollector().collect_symbols(sentence)
+        # return DPLL(clauses, symbols, [])
+        return self._dpll(clauses, symbols, model)
+
+    # function DPLL(clauses, symbols, model) returns true or false
+    def _dpll(self, clauses, symbols, model):
+        #  if every clause in clauses is true in model then return true
+       if self._are_all_clauses_true(model, clauses):
+           return True
+       # if some clause in clauses is false in model then return false
+       if self._are_any_clause_false(model, clauses):
+           return False
+
+       # P, value <- Find-Pure-Symbol(symbols, clauses, model)
+       svp = self._find_pure_symbol_value_pair(clauses, model)
+       # if P is not null then return DPLL(clauses, symbols - P, Extend(P, value, model))
+       if not svp.is_none():
+           new_symbols = list(symbols)
+           new_symbols.remove(svp.symbol)
+
+           new_model = model.extend(svp.symbol, svp.value)
+           return self._dpll(clauses, new_symbols, new_model)
+
+       # P, value <- Find-Unit-Clause(clauses, model)
+       svp = self._find_unit_clause(clauses, model)
+       # if P is not null then return DPLL(clauses, symbols -P, Extend(P, value, model))
+       if not svp.is_none():
+           new_symbols = list(symbols)
+           new_symbols.remove(svp.symbol)
+
+           new_model = model.extend(svp.symbol, svp.value)
+           return self._dpll(clauses, new_symbols, new_model)
+
+       # P <- First(symbols); rest <- Rest(symbols)
+       new_symbols = list(symbols)
+       symbol = new_symbols.pop()
+       # return DPLL(clauses, rest, Extend(P, true, model)) or
+       #        DPLL(clauses, rest, Extend(P, false, model))
+       return self._dpll(clauses, new_symbols, model.extend(symbol, True)) or \
+              self._dpll(clauses, new_symbols, model.extend(symbol, False))
+
+    def _are_all_clauses_true(self, model, clauses):
+        for clause in clauses:
+            if not model.is_true(clause):
+                return False
+        return True
+
+    def _are_any_clause_false(self, model, clauses):
+        for clause in clauses:
+            if not model.is_true(clause):
+                return True
+        return False
+
+    def _find_pure_symbol_value_pair(self, clauses, model):
+
+        found_positive_symbols = set()
+        found_negative_symbols = set()
+
+        for clause in clauses:
+            (clause_positive_symbols, clause_negative_symbols) = CNFOrGatherer().collect(clause)
+            found_positive_symbols |= (clause_positive_symbols | set(model.get_assigned_symbols()))
+            found_negative_symbols |= (clause_negative_symbols | set(model.get_assigned_symbols()))
+
+        pure_negative_symbols = found_negative_symbols - found_positive_symbols
+        pure_positive_symbols = found_positive_symbols - found_negative_symbols
+
+        if len(pure_negative_symbols) == 0 and len(pure_positive_symbols) == 0:
+            return self.SymbolValuePair()
+
+        else:
+            if len(pure_positive_symbols) > 0:
+                return self.SymbolValuePair(pure_positive_symbols.pop(), True)
+            else:
+                return self.SymbolValuePair(pure_negative_symbols.pop(), False)
+
+    def _find_unit_clause(self, clauses, model):
+        assigned_symbols = model.get_assigned_symbols()
+        for clause in clauses:
+            (clause_positive_symbols, clause_negative_symbols) = CNFOrGatherer().collect(clause)
+
+            not_assigned = (clause_negative_symbols | clause_positive_symbols) - assigned_symbols
+            if len(not_assigned) == 1:
+                symbol = not_assigned.pop()
+                if symbol in clause_negative_symbols:
+                    return self.SymbolValuePair(symbol, False)
+                else:
+                    return self.SymbolValuePair(symbol, True)
+
+        return self.SymbolValuePair()
 
 
 
