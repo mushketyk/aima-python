@@ -99,6 +99,9 @@ class CNFTransformer:
             return self._transform_implication(term)
         elif term.type == TokenTypes.OR:
             return self._transform_or(term)
+        elif term.type == TokenTypes.AND:
+            return AndTerm(self._transform_term(term.children[0]),
+                           self._transform_term(term.children[1]))
         else:
             return term
 
@@ -188,6 +191,47 @@ class CNFClauseGatherer(TermVisitor):
             if right_child.type != TokenTypes.AND:
                 self.clauses.add(right_child)
 
+class CNFOrGatherer(TermVisitor):
+    """
+    Gather all symbols in CNF clause.
+    """
+    def __init__(self):
+        self.symbols = set()
+        self.not_symbols = set()
+
+    def collect(self, root_term):
+        """
+        Collect all symbols in CNF clause. If we have A OR B OR NOT C, this will return {A, B}, {C}.
+
+        :param root_term: root term of the CNF clause
+        :return set(Term), set(Term): pair of set of terms, where fist element of pair is symbols without NOT, and second
+        set is a set of inverted symbols
+        """
+        if root_term.type == TokenTypes.IDENTIFIER:
+            return {root_term}, set()
+
+        self.symbols = set()
+        self.not_symbols = set()
+
+        root_term.accept_visitor(self)
+
+        return self.symbols, self.not_symbols
+
+    def visit_function_term(self, term):
+        if term.type == TokenTypes.OR:
+            left_child = term.children[0]
+            right_child = term.children[1]
+
+            self._add_child(left_child)
+            self._add_child(right_child)
+        elif term.type == TokenTypes.NOT:
+            self._add_child(term)
+
+    def _add_child(self, term):
+        if term.type == TokenTypes.NOT:
+            self.not_symbols.add(term.children[0])
+        elif term.type == TokenTypes.IDENTIFIER:
+            self.symbols.add(term)
 
 
 

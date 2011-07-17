@@ -1,6 +1,6 @@
 from aima.core.logic.common import Parser, SymbolTerm, AndTerm, OrTerm, NotTerm
 from aima.core.logic.propositional.parsing import PLParser, PLLexer
-from aima.core.logic.propositional.visitors import SymbolsCollector, Model, CNFTransformer, CNFClauseGatherer
+from aima.core.logic.propositional.visitors import SymbolsCollector, Model, CNFTransformer, CNFClauseGatherer, CNFOrGatherer
 
 __author__ = 'proger'
 
@@ -190,6 +190,11 @@ class CNFTransformerTest(unittest.TestCase):
                                                          OrTerm(SymbolTerm("C"),
                                                                 SymbolTerm("A"))))
 
+    def test_root_and_term(self):
+        self._test_transformer("((A => B) AND C)", AndTerm(OrTerm(NotTerm(SymbolTerm("A")),
+                                                                  SymbolTerm("B")),
+                                                           SymbolTerm("C")))
+
     def test_aima_example(self):
         self._test_transformer("B11 <=> (P12 OR P21)", AndTerm(OrTerm(NotTerm(SymbolTerm("B11")),
                                                                       OrTerm(SymbolTerm("P12"),
@@ -229,7 +234,7 @@ class CNFClauseGathererTest(unittest.TestCase):
         transformer = CNFTransformer()
         cnf = transformer.transform(sentence)
 
-        self._test_gatherere(cnf, [OrTerm(NotTerm(SymbolTerm("B11")),
+        self._test_gatherer(cnf, [OrTerm(NotTerm(SymbolTerm("B11")),
                                                    OrTerm(SymbolTerm("P12"),
                                                           SymbolTerm("P21"))),
                                     OrTerm(NotTerm(SymbolTerm("P12")),
@@ -248,15 +253,37 @@ class CNFClauseGathererTest(unittest.TestCase):
         ccg = CNFClauseGatherer()
         result = ccg.collect(sentence)
 
-        self.assertEqual(len(expected_clauses), len(result))
+        self.assertSetEqual(set(expected_clauses), set(result))
 
-        for ec in expected_clauses:
-            found = False
-            for rc in result:
-                if rc == ec:
-                    found = True
-            self.assertTrue(found, "Element " + str(ec) + " wasn't found")
+class CNFOrGathererTest(unittest.TestCase):
+    def test_single_symbol(self):
+        self._test_gatherer("A", {SymbolTerm("A")})
 
+    def test_one_or(self):
+        self._test_gatherer("A OR B", {SymbolTerm("A"), SymbolTerm("B")})
+
+    def test_two_ors(self):
+        self._test_gatherer("A OR B OR C", {SymbolTerm("A"), SymbolTerm("B"), SymbolTerm("C")})
+
+    def test_four_ors(self):
+        self._test_gatherer("A OR B OR C OR D", {SymbolTerm("A"), SymbolTerm("B"), SymbolTerm("C"), SymbolTerm("D")})
+
+    def test_one_not(self):
+        self._test_gatherer("NOT A", set(), {SymbolTerm("A")})
+
+    def test_or_and_not(self):
+        self._test_gatherer("A OR (NOT B)", {SymbolTerm("A")}, {SymbolTerm("B")})
+
+    def test_or_and_not2(self):
+        self._test_gatherer("(NOT A) OR (NOT B) OR C", {SymbolTerm("C")}, {SymbolTerm("A"), SymbolTerm("B")})
+
+    def _test_gatherer(self, expression, expected_symbols, expected_not_symbols=set()):
+        sentence = PLParser().parse(expression)
+
+        (symbols, not_symbols) = CNFOrGatherer().collect(sentence)
+
+        self.assertSetEqual(expected_symbols, symbols)
+        self.assertSetEqual(not_symbols, expected_not_symbols)
 
 
 if __name__ == '__main__':

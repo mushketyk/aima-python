@@ -163,6 +163,9 @@ class Lexer:
             self.curr_pos -= 1
 
 class Term:
+    """
+    Base class for terms in syntax tree that is produced by parsers
+    """
     def __init__(self, type, children):
         self.type = type
         self.children = list(children)
@@ -192,9 +195,16 @@ class Term:
 
         return True
 
+    # To be able to make union, difference, etc. operations with set that includes terms, we need to
+    # implement correct hashing function. If term contains any children, hashing is just a XOR of hash
+    # function of childrens XOR some prime number. If no children exists, it should be just a prime number.
     def __hash__(self):
-        return super().__hash__()
+        h = 4547
+        for child in self.children:
+            h ^= hash(child)
 
+        return h
+    
     def __str__(self):
         result = "(" + get_token_type_name(self.type) + " "
 
@@ -216,7 +226,7 @@ class FunctionTerm(Term):
 
     def is_function(self):
         return True
-
+    
     def accept_visitor(self, visitor):
         for child in self.children:
             child.accept_visitor(visitor)
@@ -247,12 +257,18 @@ class TrueTerm(Term):
     def __init__(self):
         super().__init__(TokenTypes.TRUE, [])
 
+    def __hash__(self):
+        return 4409
+
     def accept_visitor(self, visitor):
         visitor.visit_true_term(self)
 
 class FalseTerm(Term):
     def __init__(self):
         super().__init__(TokenTypes.FALSE, [])
+
+    def __hash__(self):
+        return 1039
 
     def accept_visitor(self, visitor):
         visitor.visit_false_term(self)
@@ -326,15 +342,41 @@ class ParserError(Exception):
 
 
 class TermVisitor:
-
+    """
+    Base class for visitors that traverse syntax tree.
+    """
     def visit_true_term(self, term):
+        """
+        Visitor visits TrueTerm
+
+        :param term (TrueTerm): instance of TrueTerm
+        :return: None
+        """
         pass
 
     def visit_false_term(self, term):
+        """
+        Visitor visits FalseTerm
+
+        :param term (FalseTerm): instance of FalseTerm
+        :return: None
+        """
         pass
 
     def visit_symbol_term(self, term):
+        """
+        Visitor visists symbol term
+
+        :param term (SymbolTerm): instance of SymbolTerm
+        :return: None
+        """
         pass
 
     def visit_function_term(self, term):
+        """
+        Visitor visits function term like OR, AND, Implication, etc.
+
+        :param term (FunctionTerm): instance of FunctionTerm
+        :return: None
+        """
         pass

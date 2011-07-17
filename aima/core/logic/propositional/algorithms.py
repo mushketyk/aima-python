@@ -1,9 +1,25 @@
-from aima.core.logic.common import AndTerm
+from aima.core.logic.common import AndTerm, NotTerm, OrTerm
 from aima.core.logic.propositional.parsing import PLParser, PLLexer
-from aima.core.logic.propositional.visitors import SymbolsCollector, Model
+from aima.core.logic.propositional.visitors import SymbolsCollector, Model, CNFTransformer, CNFClauseGatherer, CNFOrGatherer
 
 __author__ = 'Ivan Mushketik'
 __docformat__ = 'restructuredtext en'
+
+def create_symbols_connection(connector_ctor, symbols, none_value):
+     l = len(symbols)
+     if l == 0:
+        return none_value
+     elif l == 1:
+        return symbols[0]
+     else:
+        right_connector = connector_ctor(symbols[l - 2], symbols[l - 1])
+
+        lst = list(range(l - 2))
+        lst.reverse()
+        for i in lst:
+            right_connector = connector_ctor(symbols[i], right_connector)
+
+        return right_connector
 
 class KnowledgeBase:
     """
@@ -67,20 +83,8 @@ class KnowledgeBase:
 
         :return (Term): root term of connected statements if any statements added to the knowledge base, None otherwise
         """
-        l = len(self.sentences)
-        if l == 0:
-            return None
-        elif l == 1:
-            return self.sentences[0]
-        else:
-            right_and = AndTerm(self.sentences[l - 2], self.sentences[l - 1])
 
-            lst = list(range(l - 2))
-            lst.reverse()
-            for i in lst:
-                right_and = AndTerm(self.sentences[i], right_and)
-
-            return right_and
+        return create_symbols_connection(AndTerm, self.sentences, None)
 
 # function TT-Entails?(KB, alpha) returns true or false
 #   inputs: KB, the knowledge base, a sentence in propositional logic
@@ -135,5 +139,77 @@ class TTEntails:
             # TT-Check-All(KB, alpha, rest, Extend(P, false, model)
             return self.tt_check_all(kb_sentence, query_sentence, copy_list, true_model) and \
                    self.tt_check_all(kb_sentence, query_sentence, copy_list, false_model)
+
+class EmptyClause:
+    def __eq__(self, other):
+        return isinstance(other, EmptyClause)
+
+    def __hash__(self):
+        # Just a prime number
+        return 3163
+
+# function PL-Resolution(KB, alpha) returns true or false
+#   inputs: KB, the knowledge base, a sentence in propositional logic
+#           alpha, the query, a sentence in propositional logic
+#
+#   clauses = <- the set of clauses in the CNF representation of KB AND (NOT alpha)
+#   new <- {}
+#   loop do
+#     for each Ci, Cj in clauses do
+#       resolvents <- PL-Resolve(Ci, Cj)
+#       if resolvents contains the empty clause then return true
+#       new <- new U resolvents
+#     if new is subset of clauses then return false
+#     clauses <- clauses U new
+class PLResolution:
+    # function PL-Resolution(KB, alpha) returns true or false
+    #   inputs: KB, the knowledge base, a sentence in propositional logic
+    #           alpha, the query, a sentence in propositional logic
+    def pl_resolution(self, knowledge_base, alpha):
+        resolution_sentence = self._create_resolution_sentence(knowledge_base, alpha)
+        cnf_resolution_sentence = CNFTransformer().transform(resolution_sentence)
+
+        # clauses = <- the set of clauses in the CNF representation of KB AND (NOT alpha)
+        clauses = CNFClauseGatherer().collect(cnf_resolution_sentence)
+
+        # loop do
+        while True:
+            # new <- {}
+            new = set()
+            # for each Ci, Cj in clauses do
+            for ci in clauses:
+                for cj in clauses:
+                    if ci != cj:
+                        # resolvents <- PL-Resolve(Ci, Cj)
+                        resolvent = self._pl_resolve(ci, cj)
+                        # if resolvents contains the empty clause then return true
+                        if EmptyClause() == resolvent:
+                            return True
+                        # new <- new U resolvents
+                        new.add(resolvent)
+            # if new is subset of clauses then return false
+            if new.issubset(clauses):
+                return False
+            # clauses <- clauses U new
+            clauses = new | clauses
+
+    def _create_resolution_sentence(self, knowledge_base, alpha):
+        kb_sentence = knowledge_base.as_sentence()
+        return AndTerm(kb_sentence, NotTerm(alpha))
+
+    def _pl_resolve(self, ci, cj):
+        or_gatherer = CNFOrGatherer()
+        (ci_symbols, ci_not_symbols) = or_gatherer.collect(ci)
+        (cj_symbols, cj_not_symbols) = or_gatherer.collect(cj)
+
+        symbols = cj_symbols | ci_symbols
+        not_symbols = cj_not_symbols | ci_not_symbols
+
+        unique_symbols = symbols - not_symbols
+        unique_not_symbols = not_symbols - symbols
+
+        not_symbols_set = {NotTerm(not_symbol) for not_symbol in unique_not_symbols}
+
+        return create_symbols_connection(OrTerm, list(unique_symbols | not_symbols_set), EmptyClause())
 
 

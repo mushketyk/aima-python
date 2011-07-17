@@ -81,6 +81,11 @@ class ParserTest(unittest.TestCase):
     def test_not_parenth(self):
         self._test_parser("(NOT A)", NotTerm(SymbolTerm("A")))
 
+    def test_parsing(self):
+        self._test_parser("(B11 => (NOT P11)) AND B11", AndTerm(ImplicationTerm(SymbolTerm("B11"),
+                                                                                NotTerm(SymbolTerm("P11"))),
+                                                                SymbolTerm("B11")))
+
     def _test_parser(self, str, expected_term):
         parser = PLParser()
         result_term = parser.parse(str)
