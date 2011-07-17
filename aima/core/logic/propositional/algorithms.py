@@ -1,4 +1,4 @@
-from aima.core.logic.common import AndTerm, NotTerm, OrTerm
+from aima.core.logic.common import AndTerm, NotTerm, OrTerm, TokenTypes, SymbolTerm
 from aima.core.logic.propositional.parsing import PLParser, PLLexer
 from aima.core.logic.propositional.visitors import SymbolsCollector, Model, CNFTransformer, CNFClauseGatherer, CNFOrGatherer
 
@@ -211,5 +211,138 @@ class PLResolution:
         not_symbols_set = {NotTerm(not_symbol) for not_symbol in unique_not_symbols}
 
         return create_symbols_connection(OrTerm, list(unique_symbols | not_symbols_set), EmptyClause())
+
+# function PL-FC-Entails?(KB, q) returns true or false
+#   inputs: KB, the knowledge base, a set of propositional Horn clauses
+#           q, the query, a propositional symbol
+#   local variables: count, a table, indexed by clause, initially the number or premises
+#                    inferred, a table, indexed by symbol, each entry initially false
+#                    agenda, a list of symbols, initially the symbols known to be true in KB
+#
+#   while agenda is not empty do
+#     p <- Pop(agenda)
+#     unless inferred[p] do
+#       inferred[p] <- true
+#       for each Horn clause c in whose premise p appears do
+#         decrement count[c]
+#         if count[c] = 0 then do
+#           if Head[c] = q then return true
+#           Push(Head[c], agenda)
+#   return false
+class PLFCEntails:
+    class HornClause:
+        def __init__(self, root_term):
+            self.head = None
+            self.premise_symbols = None
+
+            if root_term.type == TokenTypes.IDENTIFIER:
+                self.head = root_term
+                self.premise_symbols = []
+            elif root_term.type != TokenTypes.IMPLICATION:
+                raise ValueError("Sentence " + str(root_term) + " isn't a horn clause")
+            else:
+                self.head = root_term.children[1]
+
+                collector = SymbolsCollector()
+                premise_expression = root_term.children[0]
+                self.premise_symbols = [SymbolTerm(name) for name in collector.collect_symbols(premise_expression)]
+
+        def __eq__(self, other):
+            if not isinstance(other, HornClause):
+                return False
+
+            if self.head != other.head:
+                return False
+
+            if len(self.premise_symbols) != len(other.premise_symbols):
+                return False
+
+            for i in range(len(self.premise_symbols)):
+                if self.premise_symbols[i] != other.premise_symbols[i]:
+                    return False
+
+            return True
+
+        def __hash__(self):
+            h = 17
+            for symbol in  self.premise_symbols:
+                h ^= hash(symbol)
+            h ^= hash(self.head)
+
+            return h
+
+        def __str__(self):
+            result = self.head.name
+
+            l = len(self.premise_symbols)
+
+            if l != 0:
+                result = " => " + result
+
+                for i in range(l):
+                    result = self.premise_symbols[i].name + result
+                    if i != l - 1:
+                        result = " AND " + result
+
+
+            return result
+
+    def __init__(self):
+        self.count = {}
+        self.infered = {}
+        self.agenda = []
+
+
+    # function PL-FC-Entails?(KB, q) returns true or false
+    #   inputs: KB, the knowledge base, a set of propositional Horn clauses
+    def plfc_entails(self, knowledge_base, question):
+        horn_clauses = self._as_horn_clauses(knowledge_base.sentences)
+
+        # while agenda is not empty do
+        while len(self.agenda) > 0:
+            # p <- Pop(agenda)
+            p = self.agenda.pop()
+
+            # unless inferred[p] do
+            if not self.infered[p]:
+                # inferred[p] <- true
+                self.infered[p] = True
+
+                # for each Horn clause c in whose premise p appears do
+                for horn_clause in horn_clauses:
+                    if p in horn_clause.premise_symbols:
+                        # decrement count[c]
+                        self.count[horn_clause.head] -= 1
+
+                        # if count[c] = 0 then do
+                        if self.count[horn_clause.head] == 0:
+                            # if Head[c] = q then return true
+                            if horn_clause.head == question:
+                                return True
+                            # Push(Head[c], agenda)
+                            self.agenda.append(horn_clause.head)
+        # return false
+        return False
+
+    def _as_horn_clauses(self, sentences):
+        horn_clauses = [self.HornClause(sentence) for sentence in sentences]
+
+        for horn_clause in horn_clauses:
+            self.infered[horn_clause.head] = False
+
+            if len(horn_clause.premise_symbols) == 0:
+                self.count[horn_clause.head] = 0
+                self.agenda.append(horn_clause.head)
+
+            for symbol in horn_clause.premise_symbols:
+                self.infered[symbol] = False
+
+            self.count[horn_clause.head] = len(horn_clause.premise_symbols)
+
+        return horn_clauses
+
+
+
+
 
 

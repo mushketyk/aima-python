@@ -1,5 +1,5 @@
 from aima.core.logic.common import AndTerm, SymbolTerm, BiconditionalTerm, ImplicationTerm, NotTerm, OrTerm
-from aima.core.logic.propositional.algorithms import KnowledgeBase, TTEntails, PLResolution, EmptyClause
+from aima.core.logic.propositional.algorithms import KnowledgeBase, TTEntails, PLResolution, EmptyClause, PLFCEntails
 from aima.core.logic.propositional.parsing import PLParser
 from aima.core.logic.propositional.visitors import CNFClauseGatherer
 
@@ -138,6 +138,30 @@ class PLResolutionTest(unittest.TestCase):
 
         symbol = pl_resolution._pl_resolve(sentence1, sentence2)
         self.assertEquals(expected_symbol, symbol)
+
+class PLFCEntailsTest(unittest.TestCase):
+    def test_single_symbol(self):
+        self._test_plfc_entails(["A => B", "A"], "B", True)
+
+    def test_cyclic_expression(self):
+        self._test_plfc_entails(["A => B", "B => A", "A"], "C", False)
+
+    def test_and_example(self):
+        self._test_plfc_entails(["(A AND B) => C", "A", "B"], "C", True)
+
+    def test_aima_example(self):
+        self._test_plfc_entails(["A", "B", "(A AND B) => L", "(A AND P) => L", "(B AND L) => M", "(L AND M) => P", "P => Q"],
+                                "Q", True)
+
+    def _test_plfc_entails(self, expressions, question, expected_result):
+        kb = KnowledgeBase()
+        kb.tell_all_str(expressions)
+
+        question_sentence = PLParser().parse(question)
+        plfc_entails = PLFCEntails()
+        result = plfc_entails.plfc_entails(kb, question_sentence)
+
+        self.assertEquals(expected_result, result)
 
 if __name__ == '__main__':
     unittest.main()
