@@ -77,6 +77,12 @@ class Model(TermVisitor):
     def get_assigned_symbols(self):
         return self.symbols_table.keys()
 
+    def flip(self, symbol):
+        self.symbols_table[symbol] = not self.symbols_table[symbol]
+
+    def __str__(self):
+        return "Model: " + str(self.symbols_table)
+
 class CNFTransformer:
     """
     Transformer that transformer any expression in propositional logic into CNF expression
@@ -143,7 +149,7 @@ class CNFTransformer:
 
         # OR distribution; A OR (B AND C) == (A OR B) AND (A OR C)
         return AndTerm(self.transform(OrTerm(and_left_child, symbol)),
-                                      OrTerm(and_right_child, symbol))
+                       self.transform(OrTerm(and_right_child, symbol)))
 
 
     def _transform_implication(self, term):

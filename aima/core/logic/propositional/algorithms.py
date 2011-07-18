@@ -1,6 +1,8 @@
+import random
 from aima.core.logic.common import AndTerm, NotTerm, OrTerm, TokenTypes, SymbolTerm
 from aima.core.logic.propositional.parsing import PLParser, PLLexer
 from aima.core.logic.propositional.visitors import SymbolsCollector, Model, CNFTransformer, CNFClauseGatherer, CNFOrGatherer
+from aima.core.util.functions import randbool, select_randomly_from_list
 
 __author__ = 'Ivan Mushketik'
 __docformat__ = 'restructuredtext en'
@@ -467,6 +469,81 @@ class DPLL:
 
         return self.SymbolValuePair()
 
+# function WalkSAT(clauses, p, max_flips) returns a satisfying model, or failure
+#   inputs: clauses, a set of clauses in propositional logic
+#           p, the probability of choosing to do a "random walk" move, typically around 0.5
+#           max_flips, number of flips allowed before giving up
+#
+#   model <- a random assignment of true/false to the symbols in clauses
+#   for i = 1 to max_flips do
+#     if model satisfies clauses then return model
+#     clause <- a randomly selected clause from clauses that is false in model
+#     with probability p flip the value in model of a randomly selected symbol from clause
+#     else flip whichever symbol in clause maximizes the number of satisfied clauses
+#   return failure
+class WalkSat:
+    # function WalkSAT(clauses, p, max_flips) returns a satisfying model, or failure
+    #   inputs: clauses, a set of clauses in propositional logic
+    #           p, the probability of choosing to do a "random walk" move, typically around 0.5
+    #           max_flips, number of flips allowed before giving up
+    def find_model_for(self, sentence, number_of_flips, probability_of_random_walk):
+        model = Model()
+        cnf_sentence = CNFTransformer().transform(sentence)
+        clauses = CNFClauseGatherer().collect(cnf_sentence)
 
+        symbols = SymbolsCollector().collect_symbols(sentence)
+        # model <- a random assignment of true/false to the symbols in clauses
+        for symbol in symbols:
+            model = model.extend(symbol, randbool())
 
+        # for i = 1 to max_flips do
+        for i in range(number_of_flips):
+            # if model satisfies clauses then return model
+            if self._all_clauses_satisfied(clauses, model):
+                return model
 
+            # clause <- a randomly selected clause from clauses that is false in model
+            symbols_list = list(self._get_symbols_of_randomly_selected_false_clause(clauses, model))
+            # with probability p flip the value in model of a randomly selected symbol from clause
+            if random.random() >= probability_of_random_walk:
+                symbol = select_randomly_from_list(symbols_list)
+            # else flip whichever symbol in clause maximizes the number of satisfied clauses
+            else:
+                symbol = self._get_symbol_whose_flip_maximises_satisfied_clauses(clauses, model, symbols_list)
+
+            model.flip(symbol)
+
+        return None
+
+    def _get_symbols_of_randomly_selected_false_clause(self, clauses, model):
+        false_clauses = []
+        for clause in clauses:
+            if not model.is_true(clause):
+                false_clauses.append(clause)
+
+        random_false_clause = select_randomly_from_list(false_clauses)
+        return SymbolsCollector().collect_symbols(random_false_clause)
+
+    def _all_clauses_satisfied(self, clauses, model):
+        return self._get_number_of_satisfied_clauses(clauses, model) == len(clauses)
+
+    def _get_number_of_satisfied_clauses(self, clauses, model):
+        satisfied = 0
+        for clause in clauses:
+            if model.is_true(clause):
+                satisfied += 1
+
+        return satisfied
+
+    def _get_symbol_whose_flip_maximises_satisfied_clauses(self, clauses, model, symbols):
+        maximizing_symbol = None
+        max_number_of_satisfied_clauses = -1
+        for symbol in symbols:
+            model.flip(symbol)
+            number_of_satisfied_clauses = self._get_number_of_satisfied_clauses(clauses, model)
+
+            if number_of_satisfied_clauses > max_number_of_satisfied_clauses:
+                maximizing_symbol = symbol
+            model.flip(symbol)
+
+        return maximizing_symbol
