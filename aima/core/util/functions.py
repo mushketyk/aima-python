@@ -11,3 +11,7 @@ def randbool():
     r = random.random()
 
     return r > 0.5
+
+def normalize(prob_distr):
+    total = sum(prob_distr)
+    return map(lambda a: a / total, prob_distr)
