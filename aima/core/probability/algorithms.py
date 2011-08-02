@@ -18,7 +18,7 @@ class ProbabilityDistribution:
             return self.values + " => " + self.probability
 
 
-    def __init__(self, *variables):
+    def __init__(self, variables):
         """
         :param variables iterable(str): names of all variables in this probability distribution
         """
@@ -30,7 +30,7 @@ class ProbabilityDistribution:
             self.variables_places[var] = i
             i += 1
 
-    def set(self, probability, *values):
+    def set(self, probability, values):
         """
         Add probability of variables in probability distribution to have specified values.
 
@@ -102,3 +102,73 @@ class EnumerationJointAsk:
 
 
         return normalize((true_distr, false_distr))
+
+
+class BayesNetNode:
+    """
+    Node of Bayes network
+    """
+    def __init__(self, variable):
+        self.variable = variable
+        self.parents = []
+        self.children = []
+        self.distribution = ProbabilityDistribution([variable])
+
+    def influenced_by(self, *parents):
+        """
+        Add nodes that influences current node in this network
+        :param parents (BayesNetNode): nodes that influence this node.
+        :return: None
+        """
+        for parent in parents:
+            self._add_parent(parent)
+            parent._add_child(self)
+
+        self.distribution = ProbabilityDistribution((parent.variable for parent in parents))
+
+    def set_probablity(self, probablity, values):
+        """
+        Set probability of values combination.
+
+        :param probablity: probability of specified values combinations.
+        :param values iterable(bool): values of the parent node. If current node is root, iterable should contain only one
+         element: True or False.
+        :return: None
+        """
+        if self._is_root():
+            value = values[0]
+
+            self.distribution.set(probablity, [value])
+            self.distribution.set(1 - probablity, [not value])
+
+        else:
+            self.distribution.set(probablity, values)
+
+    def probability_of(self, conditions):
+        """
+        Get probability of specified conditions.
+
+        :param conditions hash(str, bool): hash table that specifies values of parent variables.
+        :return (float): probability of specified conditions
+        """
+        return self.distribution.probability_of(conditions)
+
+    def __str__(self):
+        return "BayesNetNode(" + self.variable + ")"
+
+    def __eq__(self, other):
+        if not isinstance(other, BayesNetNode):
+            return False
+
+        return self.variable == other.variable
+
+    def _add_parent(self, parent):
+        if not parent in self.parents:
+            self.parents.append(parent)
+
+    def _add_child(self, child):
+        if not child in self.children:
+            self.children.append(child)
+
+    def _is_root(self):
+        return len(self.parents) == 0
