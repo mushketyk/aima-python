@@ -1,4 +1,4 @@
-from aima.core.probability.algorithms import ProbabilityDistribution, Query, EnumerationJointAsk, BayesNetNode
+from aima.core.probability.algorithms import ProbabilityDistribution, Query, EnumerationJointAsk, BayesNetNode, BayesNet, EnumerationAsk
 
 __author__ = 'proger'
 
@@ -105,6 +105,114 @@ class BayesNetNodeTest(unittest.TestCase):
         expected_result = 0.1 + 0.15 + 0.2
 
         self.assertAlmostEqual(expected_result, result, places=5)
+
+def create_burglary_network():
+    burglary = BayesNetNode("Burglary")
+    earthQuake = BayesNetNode("EarthQuake")
+    alarm = BayesNetNode("Alarm")
+    johnCalls = BayesNetNode("JohnCalls")
+    maryCalls = BayesNetNode("MaryCalls")
+
+    alarm.influenced_by(burglary, earthQuake)
+    johnCalls.influenced_by(alarm)
+    maryCalls.influenced_by(alarm)
+
+    burglary.set_probablity(0.001, [True])
+    earthQuake.set_probablity(0.002, [True])
+
+    alarm.set_probablity(0.95, [True, True])
+    alarm.set_probablity(0.94, [True, False])
+    alarm.set_probablity(0.29, [False, True])
+    alarm.set_probablity(0.001, [False, False])
+
+    johnCalls.set_probablity(0.9, [True])
+    johnCalls.set_probablity(0.05, [False])
+
+    maryCalls.set_probablity(0.7, [True])
+    maryCalls.set_probablity(0.01, [False])
+
+    return BayesNet((burglary, earthQuake))
+
+class BayesNetTest(unittest.TestCase):
+    def test_get_root_variable(self):
+        root_node = BayesNetNode("root")
+        bn = BayesNet([root_node])
+
+        vars = bn.get_variables()
+        self.assertSameElements(["root"], vars)
+
+    def test_get_variables_with_several_childs(self):
+        root_node = BayesNetNode("root")
+        child1 = BayesNetNode("child1")
+        child2 = BayesNetNode("child2")
+        child3 = BayesNetNode("child3")
+
+        child1.influenced_by(root_node)
+        child2.influenced_by(root_node)
+        child3.influenced_by(root_node)
+
+        bn = BayesNet([root_node])
+
+        vars = bn.get_variables()
+        self.assertSameElements(["root", "child1", "child2", "child3"], vars)
+
+    def test_get_variables_with_several_roots(self):
+        root_node1 = BayesNetNode("root1")
+        root_node2 = BayesNetNode("root2")
+
+        child1 = BayesNetNode("child1")
+        child2 = BayesNetNode("child2")
+        child3 = BayesNetNode("child3")
+
+        child1.influenced_by(root_node1)
+        child2.influenced_by(root_node1, root_node2)
+        child3.influenced_by(root_node2)
+
+        bn = BayesNet([root_node1, root_node2])
+
+        vars = bn.get_variables()
+        self.assertSameElements(["root1", "root2", "child1", "child2", "child3"], vars)
+
+
+    def test_variables_obtained_from_burglary_network(self):
+        net = create_burglary_network()
+        vars = net.get_variables()
+        self.assertSameElements(["Burglary", "EarthQuake", "Alarm", "JohnCalls", "MaryCalls"], vars)
+
+    def test_probability_of_root_node(self):
+        net = create_burglary_network()
+
+        true_probability = net.probability_of("Burglary", True, dict())
+        self.assertAlmostEqual(0.001, true_probability, places=5)
+
+        false_probability = net.probability_of("Burglary", False, dict())
+        self.assertAlmostEqual(0.999, false_probability, places=5)
+
+    def test_probability_of_not_root_node(self):
+        net = create_burglary_network()
+
+        prob = net.probability_of("Alarm", True, {"Burglary" : True, "EarthQuake" : True})
+        self.assertAlmostEqual(0.95, prob)
+
+        prob = net.probability_of("Alarm", False, {"Burglary" : True, "EarthQuake" : True})
+        self.assertAlmostEqual(0.05, prob)
+
+class EnumerationAskTest(unittest.TestCase):
+    def test_enumerateion_ask_aima_example(self):
+        query = Query("Burglary", {"JohnCalls" : True, "MaryCalls" : True})
+
+        true_probability, false_probability = EnumerationAsk().ask(query, create_burglary_network())
+
+        self.assertAlmostEqual(true_probability, 0.284, places=3)
+        self.assertAlmostEqual(false_probability, 0.716, places=3)
+
+    def test_enumeration_all_variables_excluding_query_known(self):
+        query = Query("Alarm", {"Burglary" : False, "EarthQuake" : False, "JohnCalls" : True, "MaryCalls" : True})
+
+        true_probability, false_probability = EnumerationAsk().ask(query, create_burglary_network())
+
+        self.assertAlmostEqual(true_probability, 0.557, places=2)
+        self.assertAlmostEqual(false_probability, 0.442, places=3)
 
 
 

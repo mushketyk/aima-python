@@ -15,3 +15,10 @@ def randbool():
 def normalize(prob_distr):
     total = sum(prob_distr)
     return map(lambda a: a / total, prob_distr)
+
+def rest(lst):
+    len_lst = len(lst)
+    if len_lst == 0:
+        return lst
+    else:
+        return lst[1:len_lst]
