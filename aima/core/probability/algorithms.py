@@ -154,6 +154,20 @@ class BayesNetNode:
         """
         return self.distribution.probability_of(conditions)
 
+    def is_true_for(self, probability, model_build_up_so_far):
+        conditions = {}
+        if self.is_root():
+            conditions = {self.variable : True}
+        else:
+            conditions = dict(model_build_up_so_far)
+
+        true_probability = self.probability_of(conditions)
+
+        if probability <= true_probability:
+            return True
+        else:
+            return False
+
     def __str__(self):
         return "BayesNetNode(" + self.variable + ")"
 

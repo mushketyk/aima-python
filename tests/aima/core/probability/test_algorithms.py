@@ -106,6 +106,29 @@ class BayesNetNodeTest(unittest.TestCase):
 
         self.assertAlmostEqual(expected_result, result, places=5)
 
+    def test_is_true_for_root_node(self):
+        root_node = BayesNetNode("Cloudy")
+
+        root_node.set_probablity(0.9, [True])
+
+        self.assertTrue(root_node.is_true_for(0.4, {}))
+        self.assertFalse(root_node.is_true_for(0.99, {}))
+
+    def test_is_true_for_not_root_node(self):
+        sprinkler_node = BayesNetNode("Sprinkler")
+        rain_node = BayesNetNode("Rain")
+
+        wet_grass_node = BayesNetNode("WetGrass")
+        wet_grass_node.influenced_by(sprinkler_node, rain_node)
+
+        wet_grass_node.set_probablity(0.99, [True, True])
+        wet_grass_node.set_probablity(0.90, [True, False])
+        wet_grass_node.set_probablity(0.90, [False, True])
+        wet_grass_node.set_probablity(0, [False, False])
+
+        self.assertTrue(wet_grass_node.is_true_for(0.5, {"Sprinkler" : True, "Rain" : True}))
+        self.assertFalse(wet_grass_node.is_true_for(0.99876, {"Sprinkler" : True, "Rain" : True}))
+
 def create_burglary_network():
     burglary = BayesNetNode("Burglary")
     earthQuake = BayesNetNode("EarthQuake")
