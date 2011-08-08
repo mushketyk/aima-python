@@ -1,5 +1,6 @@
+from random import random
 from aima.core.util.datastructure import FIFOQueue, LIFOQueue
-from aima.core.util.functions import normalize, rest
+from aima.core.util.functions import normalize, rest, randbool
 
 __author__ = 'Ivan Mushketik'
 __docformat__ = 'restructuredtext en'
@@ -57,9 +58,11 @@ class ProbabilityDistribution:
             for var_name in conditions.keys():
                 cond_value = conditions[var_name]
 
-                if not row.matches(self.variables_places[var_name], cond_value):
-                    row_meets_all_conditions = False
-                    break
+                variable_place = self.variables_places.get(var_name)
+                if variable_place != None:
+                    if not row.matches(variable_place, cond_value):
+                        row_meets_all_conditions = False
+                        break
 
             if row_meets_all_conditions:
                 prob += row.probability
@@ -104,6 +107,13 @@ class EnumerationJointAsk:
 
         return normalize((true_distr, false_distr))
 
+class Randomizer:
+    def next_double(self):
+        raise NotImplementedError("Randomizer is an abstract class")
+
+class StandardRandomizer(Randomizer):
+    def next_double(self):
+        return random()
 
 class BayesNetNode:
     """
@@ -221,7 +231,21 @@ class BayesNet:
                 else:
                     return 1 - probability
 
-                
+    # function PriorSample(bn) returns an event sampled from the prior specified by bn
+    #   inputs: bn, a Bayesian network specifying joint distribution P(X1,..., Xn)
+    #
+    #   x <- an event with n elements
+    #   for i = 1 to n do
+    #     xi <- a random sample from P(Xi | parents(Xi))
+    #   return x
+    #
+    # A sampling algorithm that generates events from a Bayesian network
+    def get_prior_sample(self, randomizer=StandardRandomizer()):
+        h = {}
+        for node in self._get_variable_nodes():
+            h[node.variable] = node.is_true_for(randomizer.next_double(), h)
+
+        return h
 
     def _get_variable_nodes(self):
         if self.variable_nodes == None:

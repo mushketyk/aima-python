@@ -1,4 +1,4 @@
-from aima.core.probability.algorithms import ProbabilityDistribution, Query, EnumerationJointAsk, BayesNetNode, BayesNet, EnumerationAsk
+from aima.core.probability.algorithms import ProbabilityDistribution, Query, EnumerationJointAsk, BayesNetNode, BayesNet, EnumerationAsk, Randomizer
 
 __author__ = 'proger'
 
@@ -237,6 +237,52 @@ class EnumerationAskTest(unittest.TestCase):
         self.assertAlmostEqual(true_probability, 0.557, places=2)
         self.assertAlmostEqual(false_probability, 0.442, places=3)
 
+class MockRandomizer(Randomizer):
+    def __init__(self, values):
+        self.values = values
+        self.curr = 0
+
+    def next_double(self):
+        value = self.values[self.curr]
+        self.curr += 1
+        return value
+
+class ApproximateInference(unittest.TestCase):
+    def test_prior_sample(self):
+        net = self._create_wet_grass_network()
+        randomizer = MockRandomizer([0.5, 0.5, 0.5, 0.5])
+
+        table = net.get_prior_sample(randomizer)
+
+        self.assertTrue(table["Cloudy"])
+        self.assertFalse(table["Sprinkler"])
+        self.assertTrue(table["Rain"])
+        self.assertTrue(table["WetGrass"])
+
+    def _create_wet_grass_network(self):
+        cloudy_node = BayesNetNode("Cloudy")
+        sprinkler_node = BayesNetNode("Sprinkler")
+        rain_node = BayesNetNode("Rain")
+        wet_grass_node = BayesNetNode("WetGrass")
+
+        sprinkler_node.influenced_by(cloudy_node)
+        rain_node.influenced_by(cloudy_node)
+        wet_grass_node.influenced_by(rain_node, sprinkler_node)
+
+        cloudy_node.set_probablity(0.5, [True])
+
+        sprinkler_node.set_probablity(0.1, [True])
+        sprinkler_node.set_probablity(0.5, [False])
+
+        rain_node.set_probablity(0.8, [True])
+        rain_node.set_probablity(0.2, [False])
+
+        wet_grass_node.set_probablity(0.99, [True, True])
+        wet_grass_node.set_probablity(0.9, [True, False])
+        wet_grass_node.set_probablity(0.9, [False, True])
+        wet_grass_node.set_probablity(0, [False, False])
+
+        return BayesNet([cloudy_node])
 
 
 if __name__ == '__main__':
