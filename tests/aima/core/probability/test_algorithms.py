@@ -243,6 +243,9 @@ class MockRandomizer(Randomizer):
         self.curr = 0
 
     def next_double(self):
+        if self.curr == len(self.values):
+            self.curr = 0
+
         value = self.values[self.curr]
         self.curr += 1
         return value
@@ -258,6 +261,16 @@ class ApproximateInference(unittest.TestCase):
         self.assertFalse(table["Sprinkler"])
         self.assertTrue(table["Rain"])
         self.assertTrue(table["WetGrass"])
+
+    def test_rejection_sample(self):
+        net = self._create_wet_grass_network()
+        randomizer = MockRandomizer([0.1])
+
+        evidence = {"Sprinkler" : True}
+
+        (true_probability, false_probability) = net.rejection_sample("Rain", evidence, 100, randomizer)
+        self.assertAlmostEqual(1, true_probability)
+        self.assertAlmostEqual(0, false_probability)
 
     def _create_wet_grass_network(self):
         cloudy_node = BayesNetNode("Cloudy")

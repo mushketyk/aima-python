@@ -247,6 +247,37 @@ class BayesNet:
 
         return h
 
+    # function RejectionSampling(X, e, bn, N) return an extimate of P(X|e)
+    #   inputs: X, the query variable
+    #           e, evidence specified as an event
+    #           bn, a Bayesian network
+    #           N, the total number of samples to be generated
+    #
+    #   local variables: N, a vector of counts over X, initially zero
+    #
+    #   for j = 1 to N do
+    #     x <- PriorSample(bn)
+    #     if x is consistent with e then
+    #       N[x] <- X[x] + 1 where x is the value of X in x
+    #   return Normalize(N[X])
+    #
+    # The rejection sampling algorithm for answering queries given evidence in a Bayesian network
+    def rejection_sample(self, x, evidence, number_of_samples, randomizer=StandardRandomizer()):
+        true_values = 0
+        false_values = 0
+
+        for i in range(0, number_of_samples):
+            sample = self.get_prior_sample(randomizer)
+            if self._consistent(sample, evidence):
+                query_value = sample[x]
+
+                if query_value:
+                    true_values += 1
+                else:
+                    false_values += 1
+
+        return normalize([true_values, false_values])
+
     def _get_variable_nodes(self):
         if self.variable_nodes == None:
             new_variables_nodes = []
@@ -276,6 +307,14 @@ class BayesNet:
                 return node
             
         return None
+
+
+    def _consistent(self, sample, evidence):
+        for key in evidence.keys():
+            if sample[key] != evidence[key]:
+                return False
+
+        return True
             
 #  function EnumerationAsk(X, e, bn) returns a distribution over X
 #    inputs: X, the query variable
