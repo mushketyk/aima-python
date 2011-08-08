@@ -272,6 +272,16 @@ class ApproximateInference(unittest.TestCase):
         self.assertAlmostEqual(1, true_probability)
         self.assertAlmostEqual(0, false_probability)
 
+    def test_likelihood_weighting(self):
+        randomizer = MockRandomizer([0.5, 0.5, 0.5, 0.5])
+
+        net = self._create_wet_grass_network()
+        evidence = {"Sprinkler" : True}
+        (true_probability, false_probability) = net.likelihood_weighting("Rain", evidence, 1000, randomizer)
+
+        self.assertAlmostEqual(1, true_probability)
+        self.assertAlmostEqual(0, false_probability)
+
     def _create_wet_grass_network(self):
         cloudy_node = BayesNetNode("Cloudy")
         sprinkler_node = BayesNetNode("Sprinkler")

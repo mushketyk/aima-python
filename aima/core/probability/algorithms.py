@@ -278,6 +278,51 @@ class BayesNet:
 
         return normalize([true_values, false_values])
 
+    # function LikelihoodWeighting(X, e, bn, N) returns an estimate of P(X|e)
+    #   inputs: X, the query variable
+    #           e, evidence specified as an event
+    #           bn, a Bayesian network
+    #           N, the total number of samples to be generated
+    #   local variables: W, a vector of weighted counts over X, initially zero
+    #
+    #   for j = 1 to N do
+    #     x, w <- WeightedSample(bn)
+    #     W[x] <- X[x] + w where x is the value of X in x
+    #   return Normalize(W[X])
+    #
+    # function WeightedSample(bn, e) returns an event and a weight
+    #   x <- an event with n elements; w <- 1
+    #   for i = 1 to n do
+    #     if Xi has a value xi in e
+    #       then w <- w x P(Xi = xi | parents(Xi))
+    #       else xi = a random sample from P(Xi | parents(Xi))
+    #   return x, w
+    #
+    # The likelihood weighting algorithm for inference in Bayesian networks
+    def likelihood_weighting(self, var, evidence, number_of_samples, randomizer=StandardRandomizer()):
+        true_probability = 0
+        false_probability = 0
+
+        for i in range(number_of_samples):
+            x = {}
+            w = 1
+
+            for node in self._get_variable_nodes():
+                if evidence.get(node.variable) != None:
+                    w *= node.probability_of(x)
+                    x[node.variable] = evidence[node.variable]
+                else:
+                    x[node.variable] = node.is_true_for(randomizer.next_double(), x)
+
+            query_value = x[var]
+
+            if query_value:
+                true_probability += w
+            else:
+                false_probability += w
+
+        return normalize([true_probability, false_probability])
+
     def _get_variable_nodes(self):
         if self.variable_nodes == None:
             new_variables_nodes = []
