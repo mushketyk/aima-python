@@ -1,6 +1,5 @@
 from random import random
-from aima.core.util.datastructure import FIFOQueue, LIFOQueue
-from aima.core.util.functions import normalize, rest, randbool
+from aima.core.util.functions import normalize, rest
 
 __author__ = 'Ivan Mushketik'
 __docformat__ = 'restructuredtext en'
@@ -199,6 +198,11 @@ class BayesNetNode:
             self.children.append(child)
 
     def is_root(self):
+        """
+        Check if this bayes node is a root (doesn't name parent nodes)
+
+        :return (bool): True if this node is a parent one, False otherwise
+        """
         return len(self.parents) == 0
 
 
@@ -208,11 +212,24 @@ class BayesNet:
         self.variable_nodes = None
 
     def get_variables(self):
+        """
+        Get names of variables in this bayes net.
+
+        :return list(str): list of names of variables in this net
+        """
         var_nodes = self._get_variable_nodes()
 
         return [node.variable for node in var_nodes]
 
     def probability_of(self, var_name, value, evidence):
+        """
+        Get probability of a variable having specified value with a specified evidence.
+
+        :param var_name (str): name of the variable
+        :param value (bool): value of the variable
+        :param evidence dict(str, bool): hash table with evidence that contains names of variables and their values
+        :return: probability of variable having specified value, with a given evidence.
+        """
         var_node = self._get_node_of(var_name)
 
         if var_node == None:
@@ -323,7 +340,49 @@ class BayesNet:
 
         return normalize([true_probability, false_probability])
 
+    # function MCMAsk(X, e, bn, N) returns an estimate of P(X|e)
+    #   local variables: N[X], a vector of counts over X, initially zero
+    #                    Z, the nonevidence variables in bn
+    #                    x, the current state of the network, initially copeid from e
+    #
+    #   initialize x with random values for the variables in Z
+    #   for j = 1 to N do
+    #     for each Zi in Z do
+    #       sample the value of Zi in x from P(Zi|mb(Zi)) given the values of MB(Zi) in x
+    #       N[x] <- N[x] + 1 where x is the value of X in x
+    #
+    #   return Normalize(N[X])
+    def mcmc_ask(self, var, evidence, number_of_values, randomizer=StandardRandomizer()):
+        true_values = 0
+        false_values = 0
+
+        non_evidence_variables = self._non_evidence_variables(evidence)
+        event = self._create_random_event(non_evidence_variables, evidence, randomizer)
+
+        for i in range(number_of_values):
+            for non_evidence_var in non_evidence_variables:
+                node = self._get_node_of(non_evidence_var)
+
+                markov_blanket = self._create_markov_blanket(node)
+                mb = self._create_mb_values(markov_blanket, event)
+
+                true_probability, false_probability = self.rejection_sample(node.variable, mb, 100, randomizer)
+                event[node.variable] = self._truth_value(true_probability, randomizer)
+
+                query_value = event[var]
+                if query_value:
+                    true_values += 1
+                else:
+                    false_values += 1
+
+        return normalize((true_values, false_values))
+
     def _get_variable_nodes(self):
+        """
+        Get nodes of variables in this bayes net.
+
+        :return list(BayesNetNode): nodes of variables in this bayes net
+        """
         if self.variable_nodes == None:
             new_variables_nodes = []
             parents = list(self.roots)
@@ -347,6 +406,12 @@ class BayesNet:
         return self.variable_nodes
 
     def _get_node_of(self, var_name):
+        """
+        Get node with a given variable name
+
+        :param var_name (str): name of the variable
+        :return (BayesNetNode): node with a given variable name
+        """
         for node in self._get_variable_nodes():
             if node.variable == var_name:
                 return node
@@ -355,12 +420,96 @@ class BayesNet:
 
 
     def _consistent(self, sample, evidence):
+        """
+        Check if given event is consistent with evidence
+
+        :param sample: event to check consistency
+        :param evidence: given evidence
+        :return (bool): True if sample is consistent, False otherwise
+        """
         for key in evidence.keys():
             if sample[key] != evidence[key]:
                 return False
 
         return True
-            
+
+    def _non_evidence_variables(self, evidence):
+        """
+        Get names of variables that doesn't belong to evidence variables
+
+        :param evidence dict(str, bool):
+        :return list(str): list of variables that doesn't for an evidence.
+        """
+        non_evidence_variables = []
+
+        for variable in self.get_variables():
+            if variable not in evidence.keys():
+                non_evidence_variables.append(variable)
+                
+        return non_evidence_variables
+
+    def _create_random_event(self, non_evidence_variables, evidence, randomizer):
+        """
+        Create random event. For each value that doesn't belong to an evidence set random value. If value belongs to
+        an evidence, just set it's known value.
+
+        :param non_evidence_variables list(str): list of names of variables that doesn't belong to an evidence.
+        :param evidence dict(str, bool):
+        :param randomizer (Randomizer):
+        :return dict(str, bool):
+        """
+        event = {}
+
+        for variable in self.get_variables():
+            if variable in non_evidence_variables:
+                random_val = randomizer.next_double()
+                if random_val <= 0.5:
+                    event[variable] = True
+                else:
+                    event[variable] = False
+            else:
+                event[variable] = evidence[variable]
+
+        return event
+
+    def _create_markov_blanket(self, node):
+        """
+        Create markov blanket for a given node. Markov blanket contains node's parent nodes, node's children and node's
+        children's parents
+
+        :param node (BayesNetNode): node to create Markov blanket for.
+        :return list(BayesNetNode): list of nodes that form Markov blanket for a given node
+        """
+        markov_blanket = []
+
+        for node in node.parents:
+            if node not in markov_blanket:
+                markov_blanket.append(node)
+
+        for child in node.children:
+            if child not in markov_blanket:
+                markov_blanket.append(child)
+
+                for child_parent in child.parents:
+                    if child_parent not in markov_blanket and child_parent != node:
+                        markov_blanket.append(child_parent)
+
+        return markov_blanket
+
+    def _create_mb_values(self, markov_blanket, event):
+        mb = {}
+        for node in markov_blanket:
+            mb[node.variable] = event[node.variable]
+
+        return mb
+
+    def _truth_value(self, true_probability, randomizer):
+        random_value = randomizer.next_double()
+        if random_value < true_probability:
+            return True
+        else:
+            return False
+
 #  function EnumerationAsk(X, e, bn) returns a distribution over X
 #    inputs: X, the query variable
 #            e, observed values for variables E
@@ -418,3 +567,5 @@ class EnumerationAsk:
                 false_probability_var = prob_var_false_given_parents * second_term
 
                 return true_probability_var + false_probability_var
+
+

@@ -282,6 +282,16 @@ class ApproximateInference(unittest.TestCase):
         self.assertAlmostEqual(1, true_probability)
         self.assertAlmostEqual(0, false_probability)
 
+    def test_mcmc_ask(self):
+        net = self._create_wet_grass_network()
+        randomizer = MockRandomizer([0.5, 0.5, 0.5, 0.5])
+
+        evidence = {"Sprinkler" : True}
+        true_probability, false_probability = net.mcmc_ask("Rain", evidence, 1, randomizer)
+
+        self.assertAlmostEqual(0.333, true_probability, places=3)
+        self.assertAlmostEqual(0.666, false_probability, places=2)
+
     def _create_wet_grass_network(self):
         cloudy_node = BayesNetNode("Cloudy")
         sprinkler_node = BayesNetNode("Sprinkler")
@@ -306,6 +316,8 @@ class ApproximateInference(unittest.TestCase):
         wet_grass_node.set_probablity(0, [False, False])
 
         return BayesNet([cloudy_node])
+
+
 
 
 if __name__ == '__main__':
